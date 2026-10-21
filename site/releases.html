@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Every Own Term release, newest first: what’s new, what got better and what was fixed." />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <title>What’s new · Own Term</title>
+    <!-- The card chat apps and social sites show for a link; og.png is the hero at 1200×630. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://own-term.vercel.app/releases" />
+    <meta property="og:site_name" content="Own Term" />
+    <meta property="og:title" content="What’s new in Own Term" />
+    <meta property="og:description" content="A Mac terminal for running many Claude Code sessions at once. Grouped, side by side, and quiet until one is waiting on you." />
+    <meta property="og:image" content="https://own-term.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Run them all. Miss nothing. Own Term with a group of Claude Code sessions side by side." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="What’s new in Own Term" />
+    <meta name="twitter:description" content="A Mac terminal for running many Claude Code sessions at once. Grouped, side by side, and quiet until one is waiting on you." />
+    <meta name="twitter:image" content="https://own-term.vercel.app/og.png" />
+    <script>
+      // The appearance picked with the switch in the bar, applied before the page draws (see useTheme).
+      try {
+        const theme = localStorage.getItem('own-term.theme')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/releases-main.tsx"></script>
+  </body>
+</html>

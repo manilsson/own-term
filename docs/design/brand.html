@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Own Term · design and brand</title>
+<style>
+  :root { --ink: #1d1d1f; --muted: #6e6e73; --rule: #e5e5ea; --night: #0b0e13; --paper: #f5f5f7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: var(--ink); font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .page { width: 1440px; margin: 0 auto; padding: 72px 0 96px; display: flex; flex-direction: column; gap: 72px; }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  .title { display: flex; align-items: center; gap: 18px; }
+  .title h1 { margin: 0; font: 700 40px/1 -apple-system, 'SF Pro Display', system-ui, sans-serif; letter-spacing: -0.03em; }
+  .title p, .meta { margin: 6px 0 0; color: var(--muted); }
+  .meta { font-size: 12px; margin: 0; }
+  h2 { margin: 0 0 20px; display: flex; align-items: baseline; gap: 14px; font: 700 24px/1 -apple-system, 'SF Pro Display', system-ui, sans-serif; letter-spacing: -0.02em; }
+  h2 span { font: 400 13px -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--muted); }
+  .panel { border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .dark .label { color: #98989d; }
+  .note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .dark .note { color: #98989d; }
+
+  .icon-row { display: grid; grid-template-columns: 520px 1fr; gap: 40px; }
+  .master { position: relative; height: 520px; display: grid; place-items: center; background: #fff; }
+  .master .grid { position: absolute; inset: 28px; width: 464px; height: 464px; pointer-events: none; }
+  .master > svg:not(.grid) { width: 464px; height: 464px; }
+  .size-table { display: flex; flex-direction: column; }
+  .sizes { flex: 1; display: flex; align-items: flex-end; gap: 48px; padding: 40px 48px; background: var(--paper); color: var(--muted); font-size: 12px; }
+  .sizes.dark { background: var(--night); color: #98989d; }
+  .sizes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .sizes figcaption { font-variant-numeric: tabular-nums; }
+
+  .construction { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .construction > div { padding: 36px 40px; display: flex; flex-direction: column; gap: 18px; }
+  .construction > div + div { border-left: 1px solid var(--rule); }
+  .construction .dark { background: var(--night); color: var(--paper); }
+  .construction .art { height: 200px; display: grid; place-items: center; }
+
+  .brand { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 380px auto auto; }
+  .brand > div { padding: 56px 64px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; }
+  .brand .dark { background: var(--night); color: var(--paper); }
+  .brand .light { background: var(--paper); border-left: 1px solid var(--rule); }
+  .brand .swatches, .brand .type { background: #fff; border-top: 1px solid var(--rule); justify-content: flex-start; }
+
+  .lockup { display: flex; align-items: center; gap: 26px; font: 700 64px/1 -apple-system, 'SF Pro Display', system-ui, sans-serif; letter-spacing: -0.03em; }
+  .small-forms { display: flex; align-items: center; gap: 40px; }
+  .small-forms > div { display: flex; align-items: center; gap: 10px; }
+  .menu-form { font-size: 15px; font-weight: 600; }
+  .prompt-form { font: 15px 'SF Mono', Menlo, ui-monospace, monospace; }
+  .prompt-form b { font-weight: 700; }
+  .prompt-form i { display: inline-block; width: 9px; height: 17px; border-radius: 2px; background: #ffb340; }
+  .small-forms small { font: 400 12px -apple-system, system-ui, sans-serif; color: var(--muted); }
+
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px 20px; }
+  .swatch-grid.signals { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .chip.split { display: flex; overflow: hidden; }
+  .chip.split span { flex: 1; }
+  .brand .swatches, .brand .type { grid-column: 1 / -1; }
+  .swatch-grid div { display: flex; flex-direction: column; gap: 8px; }
+  .chip { display: block; height: 64px; border-radius: 12px; border: 1px solid rgba(0, 0, 0, 0.08); }
+  .swatch-grid b { font-size: 13px; }
+  .swatch-grid code { font: 12px 'SF Mono', Menlo, ui-monospace, monospace; color: var(--muted); }
+  .type-rows { display: flex; flex-direction: column; gap: 18px; }
+  .type-rows > div { display: grid; grid-template-columns: 400px 1fr; gap: 24px; align-items: baseline; }
+  .display { font: 700 34px/1.1 -apple-system, 'SF Pro Display', system-ui, sans-serif; letter-spacing: -0.02em; }
+  .text { font-size: 17px; }
+  .mono { font: 15px/1.15 'SF Mono', Menlo, ui-monospace, monospace; }
+  .voice { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="72" height="72">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg>
+      <div><h1>Own Term</h1><p>Design and brand sheet · macOS</p></div>
+    </div>
+    <p class="meta">Generated by npm run brand</p>
+  </header>
+
+  <section>
+    <h2>App icon <span>1024 master on Apple’s icon grid, and the sizes macOS shows it at</span></h2>
+    <div class="icon-row">
+      <div class="panel master">
+
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="464" height="464">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg>
+        <svg class="grid" viewBox="0 0 1024 1024" aria-hidden="true">
+          <rect x="100" y="100" width="824" height="824" rx="185" fill="none" stroke="#0a84ff" stroke-opacity=".35" stroke-dasharray="6 8" stroke-width="2"/>
+          <line x1="512" y1="0" x2="512" y2="1024" stroke="#0a84ff" stroke-opacity=".18" stroke-width="2"/>
+          <line x1="0" y1="512" x2="1024" y2="512" stroke="#0a84ff" stroke-opacity=".18" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="panel size-table">
+  <div class="sizes ">
+    <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="128" height="128">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>128 · Dock</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="64" height="64">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>64</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="32" height="32">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="url(#ring)" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>32 · Finder</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="16" height="16">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="url(#ring)" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>16 · Lists</figcaption></figure>
+  </div>
+  <div class="sizes dark">
+    <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="128" height="128">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>128 · Dock</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="64" height="64">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>64</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="32" height="32">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="url(#ring)" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>32 · Finder</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="16" height="16">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="url(#ring)" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/>
+  </g>
+</svg><figcaption>16 · Lists</figcaption></figure>
+  </div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mark <span>An O that the cursor finishes</span></h2>
+    <div class="panel construction">
+      <div>
+        <div class="label">Construction</div>
+        <div class="art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 864 864" width="180" height="180" aria-hidden="true"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="#1d1d1f" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/></svg></div>
+        <p class="note">The cursor sits on the ring at 32° below 3 o’clock. The ring opens only far enough to clear it by a third of the stroke on each side, so it reads as one O rather than a spinner or a C.</p>
+      </div>
+      <div class="dark">
+        <div class="label">Monochrome on dark</div>
+        <div class="art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 864 864" width="180" height="180" aria-hidden="true"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="#f5f5f7" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/></svg></div>
+        <p class="note">The ring takes the text color of whatever it sits on. The cursor stays amber in every form.</p>
+      </div>
+      <div>
+        <div class="label">Small sizes</div>
+        <div class="art" style="display:flex;gap:28px;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 864 864" width="48" height="48" aria-hidden="true"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="#1d1d1f" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 864 864" width="32" height="32" aria-hidden="true"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="#1d1d1f" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 864 864" width="16" height="16" aria-hidden="true"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="#1d1d1f" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/></svg></div>
+        <p class="note">At 32px and below the ring thickens and the cursor grows, so the mark keeps its shape at Finder and list sizes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Brand <span>Lockups, color and type</span></h2>
+    <div class="panel brand">
+      <div class="dark">
+        <div class="label">Primary lockup · dark</div>
+        <div class="lockup"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="96" height="96">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg>Own Term</div>
+        <p class="note">Clearance around the lockup is one cursor height on every side. The amber lives in the icon and the prompt glyph; the app itself uses the system accent color, like every Apple app. The dark ground is the app’s own window color.</p>
+      </div>
+      <div class="light">
+        <div class="label">Primary lockup · light, and small forms</div>
+        <div class="lockup"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="96" height="96">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
+  <rect x="103" y="103" width="818" height="818" rx="182" fill="none" stroke="url(#rim)" stroke-width="6"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="#ffa424" opacity=".45" filter="url(#glow)"/>
+    <path d="M 608.1 783.5 A 288 288 0 1 1 798.1 479.4" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
+    <rect x="692.2" y="562.6" width="128" height="204" rx="30.7" fill="url(#cursor)"/>
+  </g>
+</svg>Own Term</div>
+        <div class="small-forms">
+          <div class="menu-form"><svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 864 864" width="20" height="20" aria-hidden="true"><defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3342"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e7f0"/></linearGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35c"/><stop offset="1" stop-color="#ffa424"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+    <path d="M 574.3 793.2 A 288 288 0 1 1 792.0 444.8" fill="none" stroke="#1d1d1f" stroke-width="132" stroke-linecap="round"/>
+    <rect x="678.2" y="549.6" width="156" height="230" rx="37.4" fill="url(#cursor)"/></svg> Own Term <small>About window, menus</small></div>
+          <div class="prompt-form"><b>O</b><i></i> <small>prompt glyph</small></div>
+        </div>
+      </div>
+      <div class="swatches">
+        <div class="label">Color · surfaces, dark and light</div>
+        <div class="swatch-grid">
+          <div><span class="chip split"><span style="background:#0b0e13"></span><span style="background:#e9ebef"></span></span><b>Base <code>--base</code></b><code>#0b0e13 · #e9ebef</code><span class="note">The window, around and between the cards.</span></div><div><span class="chip split"><span style="background:#10131a"></span><span style="background:#ffffff"></span></span><b>Content <code>--content</code></b><code>#10131a · #ffffff</code><span class="note">Pane cards and the terminals in them.</span></div><div><span class="chip split"><span style="background:#161a22"></span><span style="background:#f6f7f9"></span></span><b>Sidebar <code>--sidebar</code></b><code>#161a22 · #f6f7f9</code><span class="note">The sidebar card.</span></div><div><span class="chip split"><span style="background:#1c212b"></span><span style="background:#ffffff"></span></span><b>Raised <code>--raised</code></b><code>#1c212b · #ffffff</code><span class="note">Sheets, the palette and the find bar.</span></div>
+        </div>
+        <div class="swatch-grid signals">
+          <div><span class="chip" style="background:#0a84ff"></span><b>System accent</b><code>#0a84ff</code><span class="note">Selection, buttons, links and “your turn”. Follows the Mac’s accent setting.</span></div><div><span class="chip" style="background:#ffb340"></span><b>Cursor</b><code>#ffb340</code><span class="note">The icon and the prompt glyph only. Never UI chrome.</span></div><div><span class="chip" style="background:#ff9f0a"></span><b>Orange</b><code>#ff9f0a</code><span class="note">Needs input.</span></div><div><span class="chip" style="background:#30d158"></span><b>Green</b><code>#30d158</code><span class="note">Running, and lines added.</span></div><div><span class="chip" style="background:#ff453a"></span><b>Red</b><code>#ff453a</code><span class="note">Exited, failed, and lines removed.</span></div>
+        </div>
+      </div>
+      <div class="type">
+        <div class="label">Type</div>
+        <div class="type-rows">
+          <div><span class="display">SF Pro Display Bold</span><span class="note">Wordmark, window titles, headlines. Tracking −2 to −3%.</span></div>
+          <div><span class="text">SF Pro Text · <b>Semibold</b> for labels</span><span class="note">Sidebar, lists, toolbar and dialogs. 13pt body, 11pt captions.</span></div>
+          <div><span class="mono">SF Mono · <b>Bold</b> for tool names</span><span class="note">Terminal panes, 13pt. Line height stays at 1.15 so box-drawing characters join up. Ligatures off.</span></div>
+        </div>
+        <p class="note voice">Voice: short declarative sentences, lowercase in the terminal, sentence case in the UI. The product name is two words, Own Term, never OwnTerm or ownterm.</p>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

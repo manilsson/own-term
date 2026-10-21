@@ -1,0 +1,35 @@
+# Deploys the marketing site to https://own-term.vercel.app when it or the release notes change, and
+# after every release (release.yml), whose push this workflow's token doesn't trigger it for.
+name: Site
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - site/**
+      - RELEASE_NOTES.md
+      - scripts/deploy-site.mjs
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  deploy:
+    # The newest commit is the one worth deploying. On the job, since release.yml calls this workflow.
+    concurrency:
+      group: site
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # The site needs none of the app's native modules or Electron itself.
+      - run: npm ci --ignore-scripts
+      - run: npm run site:deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

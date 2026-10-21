@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout · Juniper</title>
+<!-- The checkout page of Juniper, the demo day's invented shop, as the Apple Pay session's browser shows it. -->
+<style>
+  * { box-sizing: border-box; }
+  /* The page is 1440 wide but shown scaled into a window half that; larger type keeps it readable there. */
+  html { zoom: 1.5; }
+  html, body { margin: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; color: #1c1c1e; background: #fff; -webkit-font-smoothing: antialiased; }
+  header { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 44px; border-bottom: 1px solid #ebebee; }
+  .wordmark { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .wordmark::before { content: ''; display: inline-block; width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; background: #3a7d44; vertical-align: 1px; }
+  .steps { display: flex; gap: 28px; font-size: 14px; color: #8e8e93; }
+  .steps b { color: #1c1c1e; font-weight: 600; }
+  .steps span::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 28px; border-radius: 50%; background: #d1d1d6; vertical-align: 2px; }
+  .steps span:last-child::after { display: none; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; max-width: 960px; margin: 0 auto; padding: 36px 44px 48px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .lede { margin: 0 0 24px; color: #6e6e73; font-size: 15px; }
+  .apple-pay { display: flex; align-items: center; justify-content: center; gap: 2px; width: 100%; height: 52px; border: 0; border-radius: 10px; background: #000; color: #fff; font: 600 18px -apple-system, BlinkMacSystemFont, sans-serif; }
+  .apple-pay i { font-style: normal; font-size: 22px; margin-right: 1px; }
+  .or { display: flex; align-items: center; gap: 16px; margin: 28px 0; color: #8e8e93; font-size: 13px; }
+  .or::before, .or::after { content: ''; flex: 1; height: 1px; background: #e5e5ea; }
+  .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; font-size: 13px; font-weight: 500; color: #3a3a3c; }
+  .field input { height: 46px; padding: 0 14px; border: 1px solid #d1d1d6; border-radius: 10px; font: 15px -apple-system, BlinkMacSystemFont, sans-serif; color: #1c1c1e; background: #fff; }
+  .field input::placeholder { color: #aeaeb2; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pay { width: 100%; height: 50px; margin-top: 10px; border: 0; border-radius: 10px; background: #3a7d44; color: #fff; font: 600 16px -apple-system, BlinkMacSystemFont, sans-serif; }
+  .secure { margin: 18px 0 0; color: #8e8e93; font-size: 12px; text-align: center; }
+  aside { padding: 22px; border-radius: 18px; background: #f5f5f7; align-self: start; }
+  aside h2 { margin: 0 0 20px; font-size: 17px; font-weight: 600; }
+  .item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e5e5ea; font-size: 14px; }
+  .item:last-of-type { border-bottom: 0; }
+  .swatch { width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0; }
+  .item div { flex: 1; }
+  .item small { display: block; margin-top: 3px; color: #8e8e93; font-size: 12px; }
+  .item b { font-weight: 500; }
+  .sums { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5ea; font-size: 14px; }
+  .sums p { display: flex; justify-content: space-between; margin: 0 0 10px; color: #6e6e73; }
+  .sums p.total { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid #e5e5ea; color: #1c1c1e; font-size: 17px; font-weight: 600; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wordmark">Juniper</div>
+    <nav class="steps"><span>Bag</span><span>Delivery</span><span><b>Payment</b></span></nav>
+  </header>
+  <main>
+    <section>
+      <h1>Payment</h1>
+      <p class="lede">Delivery to Stockholm by Thursday, 16 October.</p>
+      <button class="apple-pay" type="button"><i></i>Pay</button>
+      <div class="or">or pay with card</div>
+      <label class="field">Card number<input placeholder="1234 5678 9012 3456"></label>
+      <div class="row">
+        <label class="field">Expiry<input placeholder="MM / YY"></label>
+        <label class="field">Security code<input placeholder="CVC"></label>
+      </div>
+      <label class="field">Name on card<input placeholder="As it appears on the card"></label>
+      <button class="pay" type="button">Pay 1 740 kr</button>
+      <p class="secure">Your card details are sent straight to the payment provider and never stored by Juniper.</p>
+    </section>
+    <aside>
+      <h2>Your order</h2>
+      <div class="item"><span class="swatch" style="background: #8fa98a"></span><div><b>Linen shirt, sage</b><small>Size M</small></div>690 kr</div>
+      <div class="item"><span class="swatch" style="background: #c9b79c"></span><div><b>Wool beanie, oat</b><small>One size</small></div>350 kr</div>
+      <div class="item"><span class="swatch" style="background: #4a5568"></span><div><b>Canvas tote, navy</b><small>Large</small></div>620 kr</div>
+      <div class="sums">
+        <p><span>Subtotal</span><span>1 660 kr</span></p>
+        <p><span>Delivery</span><span>80 kr</span></p>
+        <p class="total"><span>Total</span><span>1 740 kr</span></p>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

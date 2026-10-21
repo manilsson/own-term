@@ -1,0 +1,9 @@
+node_modules
+dist
+.zsh_history
+.zcompdump*
+
+# Screenshots taken while driving the app
+/*.png
+.DS_Store
+out

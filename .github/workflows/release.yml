@@ -1,0 +1,67 @@
+# Publishes a new version of Own Term when asked: npm run ship [patch|minor|major], or Actions → Release
+# → Run workflow. Pushing doesn't release. Then deploys the site, so its release page shows the version
+# (docs/releasing.md → "From GitHub Actions").
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+# One release at a time, never cancelled halfway through publishing.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      # master as it is when the run starts, so a release that waited for another has everything since.
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Every release is signed with the same self-signed certificate, or installed copies won't update.
+      - name: Import the signing certificate
+        env:
+          CERT_P12: ${{ secrets.OWN_TERM_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.OWN_TERM_CERT_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(uuidgen)"
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+      - name: Release
+        env:
+          # gh publishes to manilsson/own-term-releases, which this workflow's own token can't write to.
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm run release -- "${{ inputs.bump || 'patch' }}"
+
+  site:
+    needs: release
+    uses: ./.github/workflows/site.yml
+    secrets: inherit
