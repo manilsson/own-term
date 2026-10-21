@@ -16,6 +16,7 @@ export function useLoop(ref: RefObject<Element | null>, count: number, ms: numbe
 }
 
 /** The newest release's disk image; GitHub redirects this name to it. */
+export const REPO = 'https://github.com/manilsson/own-term'
 export const DOWNLOAD = 'https://github.com/manilsson/own-term-releases/releases/latest/download/Own-Term.dmg'
 
 /** The newest release's version, once GitHub has said; the page reads fine without it. */

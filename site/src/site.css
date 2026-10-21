@@ -273,13 +273,12 @@ img {
   color: var(--ink);
 }
 
-/* The light and dark switch, beside Download. */
-.theme-switch {
+/* The GitHub link and the light and dark switch, beside Download. */
+.nav-icon {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
-  margin-right: -10px;
   border: 0;
   border-radius: 50%;
   background: none;
@@ -289,7 +288,15 @@ img {
   transition: background-color 0.2s, opacity 0.2s;
 }
 
-.theme-switch:hover {
+.nav-github {
+  margin-right: -20px;
+}
+
+.theme-switch {
+  margin-right: -10px;
+}
+
+.nav-icon:hover {
   background: var(--fill);
   opacity: 1;
 }
@@ -491,7 +498,7 @@ html.menu-open {
     display: none;
   }
 
-  .theme-switch {
+  .nav-github {
     margin-left: auto;
   }
 
