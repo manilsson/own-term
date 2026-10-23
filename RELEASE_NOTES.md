@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.62
+
+2026-10-23
+
+- Group the sidebar by project, with a project rail
+
 ## 0.1.61
 
 2026-10-19
