@@ -61,7 +61,7 @@ const setUp = (shot, mode) => evaluate(`(async () => {
   }
   // The modules the window loaded: after a hot reload they're at /src/x.ts?t=…, and a plain import is a second copy.
   const own = name => import(performance.getEntriesByType('resource').map(r => r.name).find(n => new URL(n).pathname === '/src/' + name + '.ts') ?? '/src/' + name + '.ts')
-  const [demo, store, workspace, browsers, status] = await Promise.all(['demo', 'store', 'workspace', 'browser', 'status'].map(own))
+  const [demo, store, workspace, browsers, status, projects, demoData] = await Promise.all(['demo', 'store', 'workspace', 'browser', 'status', 'projects', 'demo-data'].map(own))
   window.deck.setAppearance('${mode}')
   window.dispatchEvent(new CustomEvent('deckterm:action', { detail: 'theme:' + theme }))
   document.querySelector('.palette input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
@@ -69,6 +69,8 @@ const setUp = (shot, mode) => evaluate(`(async () => {
   demo.loadDemo()
   await wait(500)
   store.setState(() => ({ toasts: [], finding: null, page: null }))
+  // From the day's first project, showing the view moves the rail to the one that lists it, or to all of them.
+  projects.chooseProject(demoData.DEMO_PROJECTS.first)
   workspace.show(view)
   await wait(900)
   // The Apple Pay session's Chrome restarts with the demo day, and opens its window when it's up; the

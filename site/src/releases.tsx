@@ -32,6 +32,7 @@ const releases: Release[] = notes.split(/^## /m).slice(1).map(block => {
 
 // The releases worth a picture, and where the main page tells their story.
 const HIGHLIGHTS: Record<string, { title: string; text: string; shot?: string; href?: string }> = {
+  '0.1.62': { title: 'A sidebar per project.', text: 'Projects sit on a rail beside the sidebar, Slack’s workspaces. Choose one and the sidebar and Today show only its work, while Needs You, ⌘J and the Dock badge still count everything.', shot: 'ios', href: './#highlights' },
   '0.1.57': { title: 'Reminders.', text: 'A tile and a page for every reminder, by day: the sessions you meant to come back to, and to-dos with a time. One that came due waits at the top until it’s done.', shot: 'reminders', href: './#highlights' },
   '0.1.53': { title: 'Monitors.', text: 'Ask Claude to keep an eye on error rates, a deploy or a pull request’s checks. It writes a monitor once, and Own Term runs its commands on a schedule, draws what they return on a page in the sidebar and tells you when a rule fires.', href: './#monitors' },
   '0.1.52': { title: 'An icon for every session.', text: 'Claude picks one when it starts a session, or when you ask, and it shows before the name in the sidebar and the pane header.', href: './#features' },

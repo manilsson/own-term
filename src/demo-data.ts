@@ -230,9 +230,7 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
         .header(short(worktree('apple-pay')))
         .prompt('Add Apple Pay to checkout. Show the button only on devices that support it, and keep the card form as the fallback.')
         .tool('Read', 'src/app/checkout/page.tsx', 'Read 184 lines')
-        .tool('Search', 'pattern: "PaymentRequest", path: "src"', 'Found 3 files')
-        .say('Checkout already creates a payment intent before the form shows, so Apple Pay can reuse it. I\'ll add a button that checks support first and falls back to the card form.')
-        .tool('Write', 'src/components/checkout/ApplePayButton.tsx', 'Wrote 94 lines to ApplePayButton.tsx')
+        .say('Checkout already creates a payment intent, so Apple Pay can reuse it. I\'ll add the button above the card form.')
         .edit('src/app/checkout/page.tsx', 7, 1, [
           [61, ' ', '<OrderSummary cart={cart} />'],
           [62, '+', '<ApplePayButton'],
@@ -241,7 +239,6 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
           [65, '+', '/>'],
           [66, ' ', '<CardForm intent={intent} />'],
         ])
-        .tool('Bash', 'pnpm test checkout', 'Running…', true)
         .spinner('Running checkout tests', '1m 48s · ↓ 7.2k tokens')
         .input()
         .toString(),
@@ -255,7 +252,6 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
         .header(short(worktree('checkout-load')))
         .prompt('Load test checkout at three times last Black Friday\'s traffic and tell me what breaks first.')
         .tool('Bash', 'k6 run load/checkout.js --vus 1200 --duration 10m', '412,880 requests, 99.1% succeeded (10m 02s)')
-        .tool('Read', 'load/results/checkout-2026-10-11.json', 'Read 96 lines')
         .say('Checkout holds up. One step is close to its limit:')
         .table([
           ['', 'p95', 'Errors'],
@@ -263,8 +259,7 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
           ['Payment intent', '1.4 s', '0.9%'],
           ['Confirmation', '380 ms', '0.1%'],
         ])
-        .say('Payment intents queue behind a database pool of 20 connections. With 60, a second run kept p95 under 400 ms and errors at zero.')
-        .say('Should I open a pull request with the pool change and the load script?')
+        .say('Payment intents wait for a database connection. With a pool of 60, p95 stays under 400 ms. Should I open a pull request?')
         .worked('11m 36s')
         .input()
         .toString(),
@@ -277,9 +272,8 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
       new ClaudeScreen(cols)
         .header(short(worktree('idempotent-retry')))
         .prompt('A few customers were charged twice when the payment step timed out and they pressed Pay again. Find out why and fix it.')
-        .tool('Search', 'pattern: "createPaymentIntent", path: "src/server"', 'Found 4 files')
         .tool('Read', 'src/server/payments/intents.ts', 'Read 132 lines')
-        .say('Every retry creates a new payment intent, because no idempotency key is sent. I\'ll build one from the order and the attempt, so pressing Pay again reuses the first intent.')
+        .say('Every retry creates a new payment intent. I\'ll key them by order and attempt, so pressing Pay again reuses the first.')
         .tool('Write', 'prisma/schema.prisma', 'Added the PaymentAttempt model')
         .permission(
           'Bash command',
@@ -297,7 +291,7 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
         .header(short(ios))
         .prompt('Keep the cart working when the phone goes offline, and sync it when it comes back.')
         .tool('Read', 'Sources/Cart/CartStore.swift', 'Read 211 lines')
-        .say('The cart is only kept in memory and every change goes straight to the API. I\'ll queue changes on disk while offline and replay them in order once the connection is back.')
+        .say('Every cart change goes straight to the API. I\'ll queue them on disk while offline and replay them when the connection is back.')
         .edit('Sources/Cart/CartStore.swift', 14, 3, [
           [88, '-', 'try await api.update(cart)'],
           [88, '+', 'if network.isOnline {'],
@@ -318,7 +312,6 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
       new ClaudeScreen(cols)
         .header(short(ios))
         .prompt('Some iOS 26 users crash on launch. The crash log says Thread 0 crashed in KeychainStore.read. Find it and fix it.')
-        .tool('Read', 'Sources/Auth/KeychainStore.swift', 'Read 64 lines')
         .edit('Sources/Auth/KeychainStore.swift', 4, 2, [
           [31, '-', 'let token = String(data: item!, encoding: .utf8)!'],
           [32, '-', 'return token'],
@@ -327,7 +320,7 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
           [33, '+', 'return token'],
         ])
         .tool('Bash', 'xcodebuild test -scheme Juniper -only-testing:AuthTests', 'Executed 24 tests, with 0 failures')
-        .say('Fixed. On a fresh install the keychain has no token yet, and the code force-unwrapped it. A missing token now means signed out, and a new test launches the app with an empty keychain.')
+        .say('Fixed. On a fresh install the keychain has no token yet, and the code force-unwrapped it. A missing token now means signed out.')
         .worked('3m 47s')
         .input()
         .toString(),
@@ -340,7 +333,6 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
       new ClaudeScreen(cols)
         .header(short(docs))
         .prompt('A store owner wants every order from Q3 in a spreadsheet. Check what we support and draft a reply.')
-        .tool('Search', 'pattern: "export", path: "src/content/docs/orders"', 'Found 2 files')
         .tool('Read', 'src/content/docs/orders/export.mdx', 'Read 58 lines')
         .say('Orders can be exported from the dashboard one month at a time, or all at once through the API.')
         .question('Reply', 'How should the reply handle a whole quarter?', [
@@ -426,11 +418,11 @@ export const DEMO_SCRIPTS: Record<string, DemoScript> = {
 
 const ids = Object.fromEntries(Object.keys(DEMO_SCRIPTS).map(key => [key, `demo-${key}`]))
 
+// One group in each project, named for the work rather than repeating the project's name.
 export const DEMO_GROUPS: Group[] = [
   { id: 'demo-checkout', name: 'Checkout', collapsed: false, color: 6 },
-  { id: 'demo-ios', name: 'iOS app', collapsed: false, color: 5 },
-  { id: 'demo-support', name: 'Support', collapsed: false, color: 1 },
-  { id: 'demo-docs', name: 'Docs site', collapsed: false, color: 8 },
+  { id: 'demo-ios', name: 'Release 3.1', collapsed: false, color: 5 },
+  { id: 'demo-docs', name: 'Guide rewrite', collapsed: false, color: 8 },
 ]
 
 const session = (key: string, name: string, icon: string, cwd: string, groupId: string | null, remind?: Session['remind']): Session =>
@@ -450,7 +442,7 @@ export const DEMO_SESSIONS: Session[] = [
   session('double-charge', 'Double charge on retry', 'bug', worktree('idempotent-retry'), 'demo-checkout'),
   session('offline-cart', 'Offline cart sync', 'wifi', ios, 'demo-ios'),
   session('launch-crash', 'Crash on launch', 'flame', ios, 'demo-ios'),
-  session('order-export', 'Q3 order export', 'receipt', docs, 'demo-support'),
+  session('order-export', 'Q3 order export', 'receipt', docs, null),
   session('getting-started', 'Getting started guide', 'book-open', docs, 'demo-docs'),
   session('docs-server', 'Docs dev server', 'server', docs, 'demo-docs'),
   session('triage', 'Checkout bugs from support', 'inbox', juniper, null),
@@ -458,6 +450,17 @@ export const DEMO_SESSIONS: Session[] = [
 ]
 
 export const DEMO_VIEW: View = { kind: 'group', id: 'demo-checkout' }
+
+/** The repository each of the day's folders is in, as git would say, which places its sessions in a project. */
+export const demoRepo = (cwd: string) =>
+  cwd.startsWith(ios) ? 'juniper/ios' : cwd.startsWith(docs) ? 'juniper/docs' : cwd.startsWith(juniper) ? 'juniper/shop' : null
+
+/** The day's projects as Sam named them, how their tiles look, and the one the day opens on. */
+export const DEMO_PROJECTS = {
+  names: { 'juniper/shop': 'Shop', 'juniper/ios': 'iOS app', 'juniper/docs': 'Docs' } as Record<string, string>,
+  looks: { Shop: { color: 6, icon: 'store' }, 'iOS app': { color: 5, icon: 'smartphone' }, Docs: { color: 8, icon: 'book-open' } } as Record<string, ProjectLook>,
+  first: 'Shop',
+}
 
 /** The session whose browser has the shop's checkout page open, as Claude checks the Apple Pay button. */
 export const DEMO_BROWSER = ids['apple-pay']

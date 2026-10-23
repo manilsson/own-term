@@ -14,7 +14,7 @@ const TILES = [
   ['palette', 'Go anywhere with ⌘P.', 'Type a few letters to jump to a session or group, or to run any command.'],
   ['viewer', 'See what changed, right there.', 'Click a file in the info panel to read its diff, or the whole file, without leaving the session.'],
   ['find', 'Find it in the scrollback.', '⌘F highlights every match, and ↩ steps through them.'],
-  ['ios', 'Every project, its own group.', 'The iOS app, the shop and the docs each keep their sessions and their layout.'],
+  ['ios', 'Every project, its own sidebar.', 'Pick the shop, the iOS app or the docs on the rail, and the sidebar lists only their sessions. Needs You still counts them all.'],
   ['docs', 'Shells sit right beside Claude.', 'A dev server shows Running in green while Claude edits the pages it serves.'],
 ] as const
 

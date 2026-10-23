@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { getState, GROUP_COLORS, orderedSessions, setProjectForNew, updateGroup, useStore, viewIds, type Group, type Note, type Session, type State } from './store'
 import { githubOk, isDemo, linearOk, loadSettings, saveProjectOrder, statusState, useStatus } from './status'
 import { SESSION_ICONS } from './sessionIcons'
+import { DEMO_PROJECTS, demoRepo } from './demo-data'
 
 // The Today page's projects: each repository belongs to one, named after the sidebar group that
 // holds its sessions until the user names it in Settings; repositories given one name are one project.
@@ -59,9 +60,14 @@ export function resolveProjects(
   /** The rail's order as the user dragged it; projects not in it follow. */
   order: string[] = [],
 ): Projects {
-  const none: Projects = { list: [], session: () => undefined, group: () => [], repo: () => undefined, issue: () => undefined, note: () => undefined, entry: () => undefined }
-  if (isDemo(s)) return none
-  const sessions = orderedSessions(s).filter(x => !x.demo)
+  // The demo day's folders don't exist, so its repositories and their names come with it.
+  const demo = isDemo(s)
+  if (demo) {
+    repoAt = Object.fromEntries(s.sessions.map(x => [x.cwd, demoRepo(x.cwd)]))
+    names = DEMO_PROJECTS.names
+    order = []
+  }
+  const sessions = orderedSessions(s).filter(x => demo || !x.demo)
   const sessionRepo = (x: Session) => repoAt[x.cwd] ?? undefined
 
   // A repository whose sessions are all in one group, which has no other repository's, is that group's work.
@@ -101,9 +107,12 @@ export function resolveProjects(
     seen.set(name, project)
   }
   sessions.forEach((x, i) => add(sessionRepo(x), i))
-  for (const pr of [...(gh?.mine ?? []), ...(gh?.review ?? []), ...(gh?.merged ?? []), ...(gh?.reviewed ?? [])]) add(pr.repo)
-  for (const i of issues.values()) add(i.repo)
-  for (const e of journal ?? []) if (e.kind === 'prompt') add(e.repo)
+  // Real pull requests and prompts can still be loaded on the demo day, and mustn't reach its rail.
+  if (!demo) {
+    for (const pr of [...(gh?.mine ?? []), ...(gh?.review ?? []), ...(gh?.merged ?? []), ...(gh?.reviewed ?? [])]) add(pr.repo)
+    for (const i of issues.values()) add(i.repo)
+    for (const e of journal ?? []) if (e.kind === 'prompt') add(e.repo)
+  }
   const rank = new Map(order.map((name, i) => [name, i]))
   const placed = (name: string) => rank.get(name) ?? order.length
   const list = [...seen].sort(([a, x], [b, y]) => placed(a) - placed(b) || x.order - y.order || y.count - x.count || a.localeCompare(b))
@@ -440,6 +449,7 @@ async function cropToContent(url: string, size = 128): Promise<string> {
 /** Each project's look, by name, in `projects.list` order. */
 export function useProjectLooks(projects: Projects) {
   const looks = useStatus(s => s.settings?.projectLooks)
+  const demo = useStore(isDemo)
   const repoAt = useRepos()
   const known = useSyncExternalStore(
     listener => {
@@ -449,7 +459,7 @@ export function useProjectLooks(projects: Projects) {
     () => favicons,
   )
   useEffect(() => void learnFavicons(projects.list.flatMap(p => p.repos)), [projects, repoAt])
-  return useMemo(() => looksOf(projects, looks ?? {}, known), [projects, looks, known])
+  return useMemo(() => looksOf(projects, demo ? DEMO_PROJECTS.looks : looks ?? {}, known), [projects, demo, looks, known])
 }
 
 function looksOf(projects: Projects, looks: Record<string, ProjectLook>, known: Record<string, string | null>) {
@@ -476,5 +486,5 @@ export function placeProject(name: string, index: number, looks = statusState().
 /** Each project's look as the rail shows it now, for code outside React. */
 export function currentLooks(projects = currentProjects()) {
   learnFavicons(projects.list.flatMap(p => p.repos))
-  return looksOf(projects, statusState().settings?.projectLooks ?? {}, favicons)
+  return looksOf(projects, isDemo(getState()) ? DEMO_PROJECTS.looks : statusState().settings?.projectLooks ?? {}, favicons)
 }

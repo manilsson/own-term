@@ -115,16 +115,18 @@ Screenshots in the repo root are ignored by git.
 ### Demo day
 
 View → Load Demo Day replaces every session and group with a scripted working day (`demo-data.ts`)
-at Juniper, an invented online shop: four groups (Checkout, iOS app, Support, Docs site), ten
-sessions in every status, a reminder on one of them (due tomorrow at 9:00, set when the day loads) and two to-dos with times,
+at Juniper, an invented online shop: three projects on the rail (Shop, iOS app and Docs, placed by
+the repositories `demoRepo` gives their folders, with fixed tiles), a group in each (Checkout, Release
+3.1, Guide rewrite), ten sessions in every status, a reminder on one of them (due tomorrow at 9:00, set when the day loads) and two to-dos with times,
 a session whose transcript set the Checkout group up through Claude's `own-term` tools, and a sticky
 notification. The Apple Pay session has a browser, a headless
 Chrome on the shop's checkout page (`electron/demo/checkout.html`, served by `demo-site.cjs` on the
 first free port from 3000, as a dev server would be); it opens again whenever the day is loaded or the
 app starts with the day in it, and needs Chrome installed. The marketing site's screenshots come from it.
 While only demo sessions are open, the Today page shows the day's own invented pull requests, Linear
-issues, to-dos, week and Claude's brief and standup (`demo-status.ts`), and greets Sam, so no real data
-reaches a screenshot. Sessions saved by an older version of the demo are dropped at startup. Demo sessions play back transcripts
+issues, to-dos, week and Claude's brief and standup for each project (`demo-status.ts`), and greets Sam,
+so no real data reaches a screenshot. The day opens on Shop; keep each project's sidebar to a handful
+of rows, since a busy screenshot hides the feature it's meant to show. Sessions saved by an older version of the demo are dropped at startup. Demo sessions play back transcripts
 instead of running shells, redraw them when their width or the appearance changes, and are skipped by
 git polling, naming and grouping. Everything in them is invented; keep it that way. Loading it stops
 the user's real shells, so ask first.
@@ -163,7 +165,8 @@ The visuals:
 
 - **Screenshots** in `site/public/shots/`, a light and a dark one of each view (`<view>-light.webp`,
   `<view>-dark.webp`), from the demo day with the window at 1440×900 points. `node scripts/site-shots.mjs
-  [view…]` retakes them with the dev build running: it lays each view out from a fresh demo day, brings
+  [view…]` retakes them with the dev build running: it lays each view out from a fresh demo day, on the
+project that lists it (or all of them, for `mixed`), brings
   the window forward, captures it and writes the WebP. Retake them when the app's look changes. The
   page shows the pair that matches its appearance (`Screenshot` in `ui.tsx`). The `today` and `week`
   shots are the Today page on each tab, and `reminders` the Reminders page. The `info` and `viewer`

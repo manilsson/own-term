@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { announce, getState, newId, newProject, orderedSessions, rememberFolder, setState, type Note, type Session, type SessionState, type State } from './store'
 import { addToView, openPage, openSession } from './workspace'
-import { DEMO_NOTES, demoBrief, demoData, demoJournal, demoStandup } from './demo-status'
+import { DEMO_NOTES, demoBriefs, demoData, demoJournal, demoStandups } from './demo-status'
 import { currentProjects, learnRepos, selectedProject } from './projects'
 
 // The status page's state (StatusPage.tsx): pull requests and Linear issues from main, kept fresh in
@@ -86,8 +86,8 @@ function showDemo() {
   set({
     data: demoData(),
     settings: { ...(state.settings ?? DEMO_SETTINGS), ai: true, linear: { connected: true, user: { name: 'Sam', org: 'Juniper' }, teams: [], selected: [] }, github: { login: 'sam' } },
-    brief: { '': { ...demoBrief(), writing: false } },
-    standup: { '': { ...demoStandup(), writing: false } },
+    brief: Object.fromEntries(Object.entries(demoBriefs()).map(([name, b]) => [name, { ...b, writing: false }])),
+    standup: Object.fromEntries(Object.entries(demoStandups()).map(([name, b]) => [name, { ...b, writing: false }])),
     journal: demoJournal(),
   })
 }

@@ -1,7 +1,9 @@
 import { getState, setState } from './store'
 import { kill } from './terminals'
 import { clearGroupLayouts, show } from './workspace'
-import { DEMO_BROWSER, DEMO_GROUPS, DEMO_SCRIPTS, DEMO_SESSIONS, DEMO_TOAST, DEMO_VIEW } from './demo-data'
+import { chooseProject } from './projects'
+import { collect } from './status'
+import { DEMO_BROWSER, DEMO_GROUPS, DEMO_PROJECTS, DEMO_SCRIPTS, DEMO_SESSIONS, DEMO_TOAST, DEMO_VIEW } from './demo-data'
 
 /** Gives demo sessions their scripted status and git info, which would otherwise come from hooks and git. */
 function applyScripts() {
@@ -34,6 +36,9 @@ export function loadDemo() {
   clearGroupLayouts()
   setState(() => ({ groups: DEMO_GROUPS, sessions: DEMO_SESSIONS, view: null, status: {}, git: {}, needsSince: {}, titles: {} }))
   applyScripts()
+  // The sidebar's Today tile counts pull requests, so the day's own replace any real ones at once.
+  void collect()
+  chooseProject(DEMO_PROJECTS.first)
   show(DEMO_VIEW)
   setState(() => ({
     toasts: [{ ...DEMO_TOAST, status: 'done', sticky: true }],
