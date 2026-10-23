@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.63
+
+2026-10-23
+
+- Order the project rail by dragging its tiles
+
 ## 0.1.62
 
 2026-10-23
