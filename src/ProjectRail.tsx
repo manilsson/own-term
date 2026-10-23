@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type DragEvent, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, LayoutGrid, Settings } from 'lucide-react'
 import { GROUP_COLORS, useStore } from './store'
-import { chooseProject, currentProjects, useProjectLooks, useSidebarScope, type ProjectIcon, type ProjectLooks } from './projects'
+import { chooseProject, currentProjects, placeProject, useProjectLooks, useSidebarScope, type ProjectIcon, type ProjectLooks } from './projects'
 import { saveProjectLooks, statusState } from './status'
 import { SESSION_ICONS } from './sessionIcons'
 import { swatch } from './menus'
@@ -66,6 +66,25 @@ export async function projectMenu(project: string, shown: ProjectLooks[string], 
   if (choice === 'name') onNameProjects()
 }
 
+// ── Ordering the rail by dragging its tiles ────────────────────────────────────────────────────
+
+const PROJECT_MIME = 'application/x-deckterm-project'
+// A drag's data can't be read until the drop, so the dragged tile is kept here to skip dropping it on itself.
+let draggingProject: string | null = null
+
+const isLowerHalf = (e: DragEvent) => {
+  const box = e.currentTarget.getBoundingClientRect()
+  return e.clientY > box.top + box.height / 2
+}
+
+/** Puts a project before or after another on the rail. */
+function moveProject(name: string, target: string, after: boolean) {
+  if (name === target) return
+  const others = currentProjects().list.map(p => p.name).filter(n => n !== name)
+  const at = others.indexOf(target)
+  if (at >= 0) placeProject(name, after ? at + 1 : at)
+}
+
 // ── The rail ──────────────────────────────────────────────────────────────────────────────────
 
 /** The rail's width with its margin, which the sidebar's slot makes room for; as in `.project-rail`. */
@@ -101,6 +120,13 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
   const pick = usePicking()
   const tip = useTip()
   const shown = useRailShown()
+  const [drop, showDrop] = useState<{ name: string; after: boolean; top: number } | null>(null)
+  // Read at the drop, which can come before React has drawn the last dragover's line.
+  const dropAt = useRef(drop)
+  const setDrop = (next: typeof drop) => {
+    dropAt.current = next
+    showDrop(next)
+  }
   if (!shown) return null
   const waiting = new Map<string, number>()
   for (const id of waitingIds.split(' ').filter(Boolean)) {
@@ -109,7 +135,20 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
   }
 
   return (
-    <nav className="project-rail" aria-label="Projects">
+    <nav
+      className="project-rail"
+      aria-label="Projects"
+      // The line is drawn in the gap between tiles, so the rail, not a tile, takes the drop.
+      onDragOver={e => dropAt.current && e.dataTransfer.types.includes(PROJECT_MIME) && e.preventDefault()}
+      onDragLeave={e => !e.currentTarget.contains(e.relatedTarget as Node) && setDrop(null)}
+      onDrop={e => {
+        const target = dropAt.current
+        if (!target) return
+        e.preventDefault()
+        if (draggingProject) moveProject(draggingProject, target.name, target.after)
+        setDrop(null)
+      }}
+    >
       <button
         className={`project-tile all ${project ? '' : 'on'}`}
         data-project=""
@@ -126,6 +165,30 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
           <button
             key={p.name}
             className={`project-tile ${project?.name === p.name ? 'on' : ''} ${look.icon.kind} ${look.light ? 'light-fill' : ''}`}
+            draggable
+            onDragStart={e => {
+              draggingProject = p.name
+              e.dataTransfer.setData(PROJECT_MIME, p.name)
+              e.dataTransfer.effectAllowed = 'move'
+              tip.hide()
+            }}
+            onDragOver={e => {
+              if (!e.dataTransfer.types.includes(PROJECT_MIME)) return
+              const after = isLowerHalf(e)
+              // Beside its own place the dragged tile wouldn't move, so no line shows there.
+              const from = projects.list.findIndex(x => x.name === draggingProject)
+              const slot = i + (after ? 1 : 0)
+              if (slot === from || slot === from + 1) return setDrop(null)
+              e.preventDefault()
+              // The line sits in the gap: half of the rail's 10px gap, less half its own 2px.
+              const tile = e.currentTarget
+              const top = after ? tile.offsetTop + tile.offsetHeight + 4 : tile.offsetTop - 6
+              if (dropAt.current?.name !== p.name || dropAt.current.after !== after) setDrop({ name: p.name, after, top })
+            }}
+            onDragEnd={() => {
+              draggingProject = null
+              setDrop(null)
+            }}
             data-project={p.name}
             style={{ '--project-color': look.color } as CSSProperties}
             aria-label={p.name}
@@ -144,6 +207,7 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
       <button className="project-rail-settings" aria-label="Name Projects…" {...tip.on('Name Projects…')} onClick={onNameProjects}>
         <Settings size={16} strokeWidth={1.75} />
       </button>
+      {drop && <span className="rail-drop" style={{ top: drop.top }} />}
       {tip.shown && <RailTip {...tip.shown} />}
       {pick && (
         <IconPicker
@@ -185,13 +249,14 @@ function useTip() {
         setShown(null)
       }, 120)
     },
-    onMouseDown: () => {
-      window.clearTimeout(timer.current)
-      open.current = false
-      setShown(null)
-    },
+    onMouseDown: () => hide(),
   })
-  return { shown, on }
+  const hide = () => {
+    window.clearTimeout(timer.current)
+    open.current = false
+    setShown(null)
+  }
+  return { shown, on, hide }
 }
 
 function RailTip({ label, shortcut, row }: Tip) {

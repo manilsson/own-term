@@ -340,7 +340,7 @@ const TOOLS = [
   },
   {
     name: 'list_projects',
-    description: 'The projects the user\'s sidebar and Today page are grouped by, each with its repositories (owner/name), where its name comes from (set by the user, the sidebar group that holds the repository\'s sessions, or the repository\'s own name), its color and icon on the project rail (a session icon\'s name, `favicon` or `initials`) and whether its repository has a favicon. Sessions, pull requests, issues, to-dos and prompts are placed by their repository; the sidebar and the Today page show one project at a time, or all.',
+    description: 'The projects the user\'s sidebar and Today page are grouped by, each with its repositories (owner/name), where its name comes from (set by the user, the sidebar group that holds the repository\'s sessions, or the repository\'s own name), its color and icon on the project rail (a session icon\'s name, `favicon` or `initials`), in the rail\'s order, and whether its repository has a favicon. Sessions, pull requests, issues, to-dos and prompts are placed by their repository; the sidebar and the Today page show one project at a time, or all.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -360,13 +360,14 @@ const TOOLS = [
   },
   {
     name: 'update_project',
-    description: 'Sets how a project looks on the rail beside the sidebar: its color and its icon. `icon` is a session icon\'s name, `favicon` (its repository\'s own icon, the default when it has one) or `initials`; null gives either back its default. Undone as one.',
+    description: 'Sets how a project looks on the rail beside the sidebar and where it sits: its color, its icon and its position (1 is first; ⌃⌘1…9 follow the rail). `icon` is a session icon\'s name, `favicon` (its repository\'s own icon, the default when it has one) or `initials`; null gives either back its default. Undone as one.',
     inputSchema: {
       type: 'object',
       properties: {
         project: { type: 'string', description: 'The project\'s exact name, from list_projects.' },
         color: { type: ['string', 'null'], description: `One of ${COLORS}, or null.` },
         icon: { type: ['string', 'null'], enum: [...ICONS, 'favicon', 'initials', null] },
+        position: { type: 'integer', minimum: 1, description: 'Where it goes on the rail, 1 being first; the others keep their order.' },
       },
       required: ['project'],
     },

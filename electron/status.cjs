@@ -22,7 +22,7 @@ const BACKFILL_DAYS = 14
 
 // The renderer's GROUP_COLORS (store.ts), which a project's color indexes.
 const GROUP_COLOR_COUNT = 11
-const DEFAULTS = { ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], linearTeams: [], pings: true, projects: {}, projectLooks: {} }
+const DEFAULTS = { ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], linearTeams: [], pings: true, projects: {}, projectLooks: {}, projectOrder: [] }
 const MODELS = ['sonnet', 'opus', 'haiku']
 
 const clip = (text, max) => (typeof text === 'string' ? (text.length > max ? `${text.slice(0, max)}…` : text) : undefined)
@@ -69,6 +69,7 @@ module.exports = function status({ app, ipcMain, safeStorage, run, readSettings,
       pings: s.pings !== false,
       projects: s.projects && typeof s.projects === 'object' ? s.projects : {},
       projectLooks: s.projectLooks && typeof s.projectLooks === 'object' ? s.projectLooks : {},
+      projectOrder: Array.isArray(s.projectOrder) ? s.projectOrder : [],
       linear: s.linearKey && s.linearUser
         ? { connected: true, user: s.linearUser, teams: s.linearTeamList ?? [], selected: s.linearTeams ?? [] }
         : { connected: false },
@@ -99,10 +100,13 @@ module.exports = function status({ app, ipcMain, safeStorage, run, readSettings,
       next.projectLooks = Object.fromEntries(Object.entries(patch.projectLooks).slice(0, 200)
         .map(([name, l]) => [name, look(l)]).filter(([name, l]) => name && name.length <= 200 && Object.keys(l).length))
     }
+    if (Array.isArray(patch?.projectOrder)) {
+      next.projectOrder = [...new Set(patch.projectOrder.filter(n => typeof n === 'string' && n && n.length <= 200))].slice(0, 200)
+    }
     if (Array.isArray(patch?.linearTeams)) next.linearTeams = patch.linearTeams.filter(t => typeof t === 'string').slice(0, 50)
     store(next)
-    // What's shown and what Claude reads both change with these; a project's look changes neither.
-    if (Object.keys(next).some(k => k !== 'projectLooks')) {
+    // What's shown and what Claude reads both change with these; a project's look and place change neither.
+    if (Object.keys(next).some(k => k !== 'projectLooks' && k !== 'projectOrder')) {
       githubCache = null
       linearCache = null
     }

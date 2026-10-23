@@ -235,6 +235,8 @@ interface StatusSettings {
   projects: Record<string, string>
   /** A project's color (a GROUP_COLORS index) and icon (a session icon's name, 'favicon' or 'initials'), by project name. */
   projectLooks: Record<string, ProjectLook>
+  /** Project names in the order the user dragged them on the rail; others follow in their own order. */
+  projectOrder: string[]
   /** Notifications when a pull request starts needing you. */
   pings: boolean
   linear:

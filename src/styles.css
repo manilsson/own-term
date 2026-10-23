@@ -305,6 +305,7 @@ button.crumb:hover {
 
 /* Beside the sidebar, Slack's workspaces: 44px and an 8px margin, RAIL_WIDTH in ProjectRail.tsx. */
 .project-rail {
+  position: relative;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -336,6 +337,17 @@ button.crumb:hover {
 
 .project-tile:hover {
   outline-color: var(--separator);
+}
+
+/* Where a dragged tile will land, in the gap between two. */
+.rail-drop {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  pointer-events: none;
 }
 
 .project-tile.on {

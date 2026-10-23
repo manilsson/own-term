@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { getState, GROUP_COLORS, orderedSessions, setProjectForNew, updateGroup, useStore, viewIds, type Group, type Note, type Session, type State } from './store'
-import { githubOk, isDemo, linearOk, loadSettings, statusState, useStatus } from './status'
+import { githubOk, isDemo, linearOk, loadSettings, saveProjectOrder, statusState, useStatus } from './status'
 import { SESSION_ICONS } from './sessionIcons'
 
 // The Today page's projects: each repository belongs to one, named after the sidebar group that
@@ -56,6 +56,8 @@ export function resolveProjects(
   names: Record<string, string>,
   data: StatusData | null,
   journal: JournalEntry[] | null,
+  /** The rail's order as the user dragged it; projects not in it follow. */
+  order: string[] = [],
 ): Projects {
   const none: Projects = { list: [], session: () => undefined, group: () => [], repo: () => undefined, issue: () => undefined, note: () => undefined, entry: () => undefined }
   if (isDemo(s)) return none
@@ -87,7 +89,7 @@ export function resolveProjects(
   const issues = new Map([...(lin?.open ?? []), ...(lin?.done ?? [])].map(i => [i.identifier, i]))
   const ofIssue = (issue: Pick<StatusIssue, 'repo'>) => ofRepo(issue.repo)
 
-  // Ordered as the sidebar is, then by how much each has going on.
+  // As the user ordered the rail, then as the sidebar is, then by how much each has going on.
   const seen = new Map<string, { repos: Set<string>; order: number; count: number }>()
   const add = (repo: string | null | undefined, order = Infinity) => {
     if (!repo) return
@@ -102,7 +104,9 @@ export function resolveProjects(
   for (const pr of [...(gh?.mine ?? []), ...(gh?.review ?? []), ...(gh?.merged ?? []), ...(gh?.reviewed ?? [])]) add(pr.repo)
   for (const i of issues.values()) add(i.repo)
   for (const e of journal ?? []) if (e.kind === 'prompt') add(e.repo)
-  const list = [...seen].sort(([a, x], [b, y]) => x.order - y.order || y.count - x.count || a.localeCompare(b))
+  const rank = new Map(order.map((name, i) => [name, i]))
+  const placed = (name: string) => rank.get(name) ?? order.length
+  const list = [...seen].sort(([a, x], [b, y]) => placed(a) - placed(b) || x.order - y.order || y.count - x.count || a.localeCompare(b))
     .map(([name, p]) => ({ name, repos: [...p.repos] }))
 
   // A remembered project counts only while it's still one, so a renamed one hides nothing.
@@ -142,7 +146,7 @@ export function resolveProjects(
 /** The projects as they are now, for code outside React. */
 export function currentProjects() {
   const status = statusState()
-  return resolveProjects(getState(), repos, status.settings?.projects ?? {}, status.data, status.journal)
+  return resolveProjects(getState(), repos, status.settings?.projects ?? {}, status.data, status.journal, status.settings?.projectOrder)
 }
 
 export function useProjects() {
@@ -152,7 +156,8 @@ export function useProjects() {
   const names = useStatus(s => s.settings?.projects)
   const data = useStatus(s => s.data)
   const journal = useStatus(s => s.journal)
-  return useMemo(() => resolveProjects({ sessions, groups }, repoAt, names ?? {}, data, journal), [sessions, groups, repoAt, names, data, journal])
+  const order = useStatus(s => s.settings?.projectOrder)
+  return useMemo(() => resolveProjects({ sessions, groups }, repoAt, names ?? {}, data, journal, order), [sessions, groups, repoAt, names, data, journal, order])
 }
 
 // ── The project the page shows ────────────────────────────────────────────────────────────────
@@ -294,6 +299,28 @@ export function useRememberProjects() {
   // The Today page's collecting learns these minutes late; the sidebar needs a new session placed now.
   useEffect(() => void learnRepos(sessions.filter(x => !x.demo).map(x => x.cwd)), [sessions])
   useEffect(() => void (named || loadSettings()), [named])
+  // A project renamed (its repositories given another name, or its group renamed) keeps its place on
+  // the rail and its look, which are kept by name. Not before names load: that change isn't a rename.
+  const lastList = useRef<ProjectDef[] | null>(null)
+  useEffect(() => {
+    const before = lastList.current
+    lastList.current = projects.list
+    const settings = statusState().settings
+    if (!before || !settings || !placedOnce) return
+    const now = new Set(projects.list.map(p => p.name))
+    const was = new Set(before.map(p => p.name))
+    const renamed = new Map<string, string>()
+    for (const old of before) {
+      if (now.has(old.name)) continue
+      const next = projects.list.find(p => !was.has(p.name) && p.repos.some(r => old.repos.includes(r)))
+      if (next) renamed.set(old.name, next.name)
+    }
+    const { projectOrder, projectLooks } = settings
+    if (![...renamed.keys()].some(n => projectOrder.includes(n) || projectLooks[n])) return
+    const order = [...new Set(projectOrder.map(n => renamed.get(n) ?? n))]
+    const looks = Object.fromEntries(Object.entries(projectLooks).map(([n, l]) => [renamed.get(n) ?? n, l]))
+    saveProjectOrder(order, looks)
+  }, [projects])
   // A session on screen whose place changes under it (its repository learned after it opened) is
   // followed; one on screen when the user chose another project is left alone.
   const view = useStore(s => s.view)
@@ -431,6 +458,19 @@ function looksOf(projects: Projects, looks: Record<string, ProjectLook>, known: 
     return url ? [[p.name, url]] : []
   }))
   return Object.fromEntries(projects.list.map((p, i) => [p.name, projectLook(p.name, i, looks, byProject)])) as ProjectLooks
+}
+
+/**
+ * Moves a project to `index` (0 is first) on the rail. The whole order is kept, so it stays put; a
+ * color left to its default comes from the tile's place, so it's kept too rather than repainted.
+ */
+export function placeProject(name: string, index: number, looks = statusState().settings?.projectLooks ?? {}) {
+  const list = currentProjects().list.map(p => p.name)
+  if (!list.includes(name)) return
+  const names = list.filter(n => n !== name)
+  names.splice(Math.max(0, Math.min(index, names.length)), 0, name)
+  const kept = Object.fromEntries(list.map((n, i) => [n, { ...looks[n], color: looks[n]?.color ?? i % GROUP_COLORS.length }]))
+  return saveProjectOrder(names, { ...looks, ...kept })
 }
 
 /** Each project's look as the rail shows it now, for code outside React. */

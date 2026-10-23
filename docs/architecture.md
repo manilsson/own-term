@@ -432,7 +432,7 @@ The sidebar's state lives in the window, so main asks it (`tools:call`, answered
 | `send_prompt`, `wait_for` | Type a prompt into Claude in another session and send it; wait for that session's turn to end and get its reply |
 | `add_note`, `list_notes`, `complete_note`, `remove_note` | The Today page's to-dos; a note is tied to the calling session unless told otherwise, can name a Linear issue, and with a time is a reminder (`remind` and `cancel_reminder` take `todo` to change it) |
 | `get_status` | What the Today page knows: the brief, sessions needing the user, reminders, pull requests, issues and to-dos |
-| `list_projects`, `set_projects`, `update_project` | The projects, each with its repositories, where its name comes from, and its color, icon and whether it has a favicon; name repositories (alike names merge them, null resets) or set a project's color and icon, each undone as one. `create_group` and `new_session` take a `project` |
+| `list_projects`, `set_projects`, `update_project` | The projects, each with its repositories, where its name comes from, and its color, icon and whether it has a favicon; name repositories (alike names merge them, null resets) or set a project's color, icon and place on the rail, each undone as one. `create_group` and `new_session` take a `project` |
 | `save_monitor`, `list_monitors`, `get_monitor`, `pause_monitor`, `remove_monitor`, `move_monitor` | Monitors (see "Monitors"); `save_monitor` and `move_monitor` put one in a group; `get_monitor` with `run: true` runs the allowed commands first, and lists problems such as a panel naming a field the rows don't have |
 
 Sessions and groups are named by id or exact name, and `session` defaults to the caller. Every input
@@ -484,7 +484,9 @@ behind it, hidden, so leaving it shows them at once. Showing any session or grou
   choose one (`localStorage['deckterm.project']`), and every card on both tabs keeps to it. With one
   project or on the demo day there are no tabs.
 - **Projects in the sidebar**: the same choice narrows the sidebar. The project rail (`ProjectRail.tsx`)
-  beside it has a tile per project, Slack's workspaces, and ⌃⌘0…⌃⌘9 choose too (View menu). A group is in
+  beside it has a tile per project, Slack's workspaces, and ⌃⌘0…⌃⌘9 choose too (View menu). Tiles are in the
+  order they were dragged into (`projectOrder` in the status settings, with each moved project's color kept, since
+  an unset one comes from its place); a project never placed follows, in the sidebar's order. A group is in
   the projects its sessions are in; a group or session that no repository places keeps the project it
   was made in (`project` on it, set by `useRememberProjects`, and a group's kept up to date from its
   sessions), and one in no project is listed in every project. Showing something the sidebar doesn't

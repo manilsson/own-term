@@ -7,8 +7,8 @@ import { SESSION_ICONS } from './sessionIcons'
 import { lastReply, promptClaude } from './claude'
 import { endSessionNow } from './menus'
 import { addNote, dropNote, removeNote, setNoteDone, short, updateNote } from './notes'
-import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithClaude, saveProjectLooks, settingsChanged, startIssueIn, statusState, statusText } from './status'
-import { currentLooks, currentProjects, knownRepos, resolveProjects } from './projects'
+import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithClaude, saveProjectLooks, saveProjectOrder, settingsChanged, startIssueIn, statusState, statusText } from './status'
+import { currentLooks, currentProjects, knownRepos, placeProject, resolveProjects } from './projects'
 import { addToView, closePage, groupRemoved, openSession, refreshGroupView, refreshView, renamePane, show } from './workspace'
 import { monitorList, refreshMonitors, removeMonitor, setPaused } from './monitors'
 
@@ -412,7 +412,13 @@ function listProjects(): ToolResult {
 async function updateProject(args: Record<string, unknown>): Promise<ToolResult> {
   if (isDemo(getState())) throw new ToolError('Not on the demo day.')
   const name = projectName(args.project)
-  const before = { ...(await window.deck.statusSettings()).projectLooks }
+  const count = currentProjects().list.length
+  const position = args.position
+  if (position !== undefined && (!Number.isInteger(position) || (position as number) < 1 || (position as number) > count)) {
+    throw new ToolError(`The position is a whole number from 1 to ${count}.`)
+  }
+  const saved = await window.deck.statusSettings()
+  const before = { ...saved.projectLooks }
   const look = { ...before[name] }
   if (args.color === null) delete look.color
   else if (args.color !== undefined) look.color = colorIndex(args.color)
@@ -422,8 +428,10 @@ async function updateProject(args: Record<string, unknown>): Promise<ToolResult>
   const next = { ...before }
   if (Object.keys(look).length) next[name] = look
   else delete next[name]
-  await saveProjectLooks(next)
-  announce(`Claude changed how ${name} looks`, () => saveProjectLooks(before))
+  if (position === undefined) await saveProjectLooks(next)
+  else await placeProject(name, (position as number) - 1, next)
+  // Undo puts the order back only when this moved it, so a drag made since is kept.
+  announce(`Claude changed ${name} on the rail`, () => (position === undefined ? saveProjectLooks(before) : saveProjectOrder(saved.projectOrder, before)))
   return { text: `Done. ${listProjects().text}` }
 }
 

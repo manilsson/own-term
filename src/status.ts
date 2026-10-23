@@ -93,7 +93,7 @@ function showDemo() {
 }
 
 const DEMO_SETTINGS: StatusSettings = {
-  ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], projects: {}, projectLooks: {}, pings: true, linear: { connected: false }, github: null,
+  ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], projects: {}, projectLooks: {}, projectOrder: [], pings: true, linear: { connected: false }, github: null,
 }
 
 async function leaveDemo() {
@@ -140,6 +140,11 @@ export async function loadSettings() {
 /** Saves how projects look on the rail; nothing collected depends on it, so nothing is asked again. */
 export async function saveProjectLooks(projectLooks: Record<string, ProjectLook>) {
   set({ settings: await window.deck.saveStatusSettings({ projectLooks }) })
+}
+
+/** Saves the order of the project rail, and any looks that must stay as they were through it. */
+export async function saveProjectOrder(projectOrder: string[], projectLooks?: Record<string, ProjectLook>) {
+  set({ settings: await window.deck.saveStatusSettings({ projectOrder, ...(projectLooks && { projectLooks }) }) })
 }
 
 export function settingsChanged(settings: StatusSettings) {
