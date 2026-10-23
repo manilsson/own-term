@@ -1,5 +1,5 @@
 import {
-  addGroup, announce, getState, GROUP_COLORS, monitorPane, moveMonitor, moveSession, newId, paneGroup, viewIds, orderedSessions, rememberFolder, removeGroup, setState, subscribe, updateGroup, updateSession,
+  addGroup, announce, getState, GROUP_COLORS, monitorPane, moveMonitor, moveSession, newId, newProject, paneGroup, viewIds, orderedSessions, rememberFolder, removeGroup, setState, subscribe, updateGroup, updateSession,
   type Group, type Note, type Session, type SessionState, type State,
 } from './store'
 import { cancelNoteReminder, cancelReminder, finishReminder, formatDue, setNoteReminder, setReminder } from './reminders'
@@ -7,8 +7,8 @@ import { SESSION_ICONS } from './sessionIcons'
 import { lastReply, promptClaude } from './claude'
 import { endSessionNow } from './menus'
 import { addNote, dropNote, removeNote, setNoteDone, short, updateNote } from './notes'
-import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithClaude, settingsChanged, startIssueIn, statusState, statusText } from './status'
-import { currentProjects, knownRepos, resolveProjects } from './projects'
+import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithClaude, saveProjectLooks, settingsChanged, startIssueIn, statusState, statusText } from './status'
+import { currentLooks, currentProjects, knownRepos, resolveProjects } from './projects'
 import { addToView, closePage, groupRemoved, openSession, refreshGroupView, refreshView, renamePane, show } from './workspace'
 import { monitorList, refreshMonitors, removeMonitor, setPaused } from './monitors'
 
@@ -70,6 +70,14 @@ function iconName(name: unknown) {
   const icon = text(name, 'The icon', 40).toLowerCase()
   if (!SESSION_ICONS[icon]) throw new ToolError(`No icon “${icon}”; use one of ${Object.keys(SESSION_ICONS).join(', ')}.`)
   return icon
+}
+
+/** One of the projects the sidebar and Today page are grouped by, by its exact name in any case. */
+function projectName(name: unknown) {
+  const wanted = text(name, 'The project', 200)
+  const project = currentProjects().list.find(p => p.name.toLowerCase() === wanted.toLowerCase())
+  if (!project) throw new ToolError(`No project “${wanted}”; list_projects shows them.`)
+  return project.name
 }
 
 function colorIndex(name: unknown) {
@@ -151,10 +159,13 @@ function join(session: Session, groupId: string | null) {
 
 function listSessions(caller: string): ToolResult {
   const s = getState()
+  const projects = currentProjects()
   const groups = s.groups.map(g => ({
     id: g.id,
     name: g.name,
     color: GROUP_COLORS[g.color % GROUP_COLORS.length].name,
+    // None: it's listed in every project.
+    projects: projects.group(g.id),
     sessions: s.sessions.filter(x => x.groupId === g.id).length,
     monitors: monitorList().filter(m => g.monitors?.includes(m.id)).map(m => m.name),
   }))
@@ -163,6 +174,7 @@ function listSessions(caller: string): ToolResult {
     name: x.name,
     ...(x.id === caller && { you: true }),
     group: s.groups.find(g => g.id === x.groupId)?.name ?? null,
+    project: projects.session(x.id) ?? null,
     status: STATUS[s.status[x.id] ?? 'idle'],
     folder: tilde(x.cwd),
     branch: s.git[x.id]?.branch ?? undefined,
@@ -251,6 +263,7 @@ async function newSession(args: Record<string, unknown>, caller: string): Promis
   const claude = args.claude !== false
   const icon = args.icon === undefined || args.icon === null ? undefined : iconName(args.icon)
   if (prompt && !claude) throw new ToolError('A prompt needs Claude; leave out `claude: false`.')
+  const project = args.project === undefined ? newProject() : projectName(args.project)
   const chosen = folder
   if (typeof args.worktree === 'string' && args.worktree.trim()) folder = await window.deck.createWorktree(folder, args.worktree.trim())
   const session: Session = {
@@ -264,6 +277,7 @@ async function newSession(args: Record<string, unknown>, caller: string): Promis
     sorted: group ? true : undefined,
     firstPrompt: prompt,
     icon,
+    project,
   }
   setState(s => ({ sessions: [...s.sessions, session] }))
   rememberFolder(chosen)
@@ -373,18 +387,44 @@ function listProjects(): ToolResult {
   const projects = currentProjects()
   if (!projects.list.length) return { text: 'No projects yet: none of the sessions, pull requests, issues or prompts this week is in a GitHub repository.' }
   const names = statusState().settings?.projects ?? {}
+  const chosen = statusState().settings?.projectLooks ?? {}
   const unnamed = unnamedProjects()
+  const looks = currentLooks(projects)
   const sessions = getState().sessions.filter(x => !x.demo)
   return {
-    text: JSON.stringify(projects.list.map(p => ({
-      name: p.name,
-      sessions: sessions.filter(x => projects.session(x.id) === p.name).map(x => x.name),
-      repos: p.repos.map(repo => ({
-        repo,
-        named: names[repo] ? 'by the user' : unnamed.repo(repo) === repo.split('/')[1] ? 'after the repository' : 'after its sidebar group',
-      })),
-    })), null, 1),
+    text: JSON.stringify(projects.list.map((p, i) => {
+      const { icon, favicon } = looks[p.name]
+      return {
+        name: p.name,
+        color: GROUP_COLORS[(chosen[p.name]?.color ?? i) % GROUP_COLORS.length].name,
+        icon: icon.kind === 'lucide' ? icon.name : icon.kind,
+        favicon: !!favicon,
+        sessions: sessions.filter(x => projects.session(x.id) === p.name).map(x => x.name),
+        repos: p.repos.map(repo => ({
+          repo,
+          named: names[repo] ? 'by the user' : unnamed.repo(repo) === repo.split('/')[1] ? 'after the repository' : 'after its sidebar group',
+        })),
+      }
+    }), null, 1),
   }
+}
+
+async function updateProject(args: Record<string, unknown>): Promise<ToolResult> {
+  if (isDemo(getState())) throw new ToolError('Not on the demo day.')
+  const name = projectName(args.project)
+  const before = { ...(await window.deck.statusSettings()).projectLooks }
+  const look = { ...before[name] }
+  if (args.color === null) delete look.color
+  else if (args.color !== undefined) look.color = colorIndex(args.color)
+  if (args.icon === null || args.icon === 'favicon') delete look.icon
+  else if (args.icon === 'initials') look.icon = 'initials'
+  else if (args.icon !== undefined) look.icon = iconName(args.icon)
+  const next = { ...before }
+  if (Object.keys(look).length) next[name] = look
+  else delete next[name]
+  await saveProjectLooks(next)
+  announce(`Claude changed how ${name} looks`, () => saveProjectLooks(before))
+  return { text: `Done. ${listProjects().text}` }
 }
 
 async function setProjects(args: Record<string, unknown>): Promise<ToolResult> {
@@ -677,9 +717,10 @@ async function run(caller: string, tool: string, args: Record<string, unknown>):
       const color = colorIndex(args.color)
       const members = (Array.isArray(args.sessions) ? args.sessions : []).map(ref => findSession(ref, caller))
       const monitors = (Array.isArray(args.monitors) ? args.monitors : []).map(findMonitor)
+      const project = args.project === undefined ? undefined : projectName(args.project)
       const before = snapshot()
       const id = addGroup()
-      updateGroup(id, { name, autoName: false, ...(color !== undefined && { color }) })
+      updateGroup(id, { name, autoName: false, ...(color !== undefined && { color }), ...(project && { project }) })
       members.forEach(m => join(m, id))
       monitors.forEach(m => moveMonitor(m.id, id))
       refreshView()
@@ -798,6 +839,8 @@ async function run(caller: string, tool: string, args: Record<string, unknown>):
       return listProjects()
     case 'set_projects':
       return setProjects(args)
+    case 'update_project':
+      return updateProject(args)
     case 'save_monitor':
       return saveMonitor(args, caller)
     case 'list_monitors':

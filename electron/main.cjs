@@ -796,6 +796,13 @@ function buildMenu() {
       submenu: [
         { label: 'Today', accelerator: 'Ctrl+Cmd+T', click: menu('status') },
         { type: 'separator' },
+        { label: 'All Projects', accelerator: 'Ctrl+Cmd+0', click: menu('project', -1) },
+        ...Array.from({ length: 9 }, (_, i) => ({
+          label: `Project ${i + 1}`,
+          accelerator: `Ctrl+Cmd+${i + 1}`,
+          click: menu('project', i),
+        })),
+        { type: 'separator' },
         { label: 'Toggle Sidebar', accelerator: 'Ctrl+Cmd+S', click: menu('toggle-sidebar') },
         { label: 'Toggle Info Panel', accelerator: 'Ctrl+Cmd+I', click: menu('toggle-info') },
         {

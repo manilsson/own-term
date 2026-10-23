@@ -219,6 +219,11 @@ interface StatusData {
   at: number
 }
 
+interface ProjectLook {
+  color?: number
+  icon?: string
+}
+
 interface StatusSettings {
   ai: boolean
   model: 'sonnet' | 'opus' | 'haiku'
@@ -228,6 +233,8 @@ interface StatusSettings {
   mutedRepos: string[]
   /** Project names by repository (owner/name); repositories given one name are one project. */
   projects: Record<string, string>
+  /** A project's color (a GROUP_COLORS index) and icon (a session icon's name, 'favicon' or 'initials'), by project name. */
+  projectLooks: Record<string, ProjectLook>
   /** Notifications when a pull request starts needing you. */
   pings: boolean
   linear:
@@ -577,6 +584,8 @@ interface Window {
     repoFolders(repo: string, folders: string[]): Promise<string[]>
     /** The repository (owner/name) each folder is in, or null. */
     repos(folders: string[]): Promise<Record<string, string | null>>
+    /** By repository, the icon its clone in one of the given folders keeps (a data URL), or null. */
+    projectFavicons(folders: Record<string, string[]>): Promise<Record<string, string | null>>
     /** Each folder's main checkout while it still exists, with its repository, and a clone of each repository asked for. */
     sessionFolders(folders: string[], repos: string[]): Promise<{ roots: Record<string, { root: string; repo: string | null }>; clones: Record<string, string> }>
     /** A pull request checked out in a worktree of the clone at `folder`; resolves with the worktree's folder. */

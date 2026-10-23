@@ -38,7 +38,9 @@ through `window.deck`, which `electron/preload.cjs` exposes and `src/global.d.ts
 | `src/reminders.ts`, `ReminderSheet.tsx`, `RemindersPage.tsx` | Remind Me: a time and note on a session, the Reminders page the sidebar's tile opens, and moving it to Needs You when due |
 | `src/tools.ts` | What Claude's `own-term` tools do: list and describe sessions, organize sessions and groups, reminders, starting sessions; each change gets a notice with Undo |
 | `src/status.ts`, `StatusPage.tsx`, `SettingsSheet.tsx`, `notes.ts` | The Today page (⌃⌘T): its data and actions, the page, Settings (⌘,), and the to-dos |
-| `src/projects.ts` | The Today page's projects: which project each session, pull request, issue, to-do and prompt is in, and the one the page shows (see "Today page") |
+| `src/projects.ts` | Projects: which project each session, group, pull request, issue, to-do and prompt is in, the one the sidebar and the Today page show, and how each looks on the rail (see "Today page") |
+| `src/ProjectRail.tsx` | The project rail beside the sidebar (a tile per project, its needs-you badge), the sidebar's project title and a project's Color and Icon menu |
+| `src/IconPicker.tsx` | A searchable grid of the session icons, for a project's icon |
 | `src/TodayChat.tsx` | The Today page's chat, one for each tab: the field floating at its bottom (⌘L) and the conversation above it |
 | `src/monitors.ts`, `MonitorPage.tsx`, `MonitorCharts.tsx` | The monitors as the window sees them (a summary of each, pushed by main), their sidebar menu and how values read; a monitor's page; its charts |
 | `src/themes.ts` | The color themes: each one's surfaces, accent and terminal palette, in dark and light |
@@ -430,7 +432,7 @@ The sidebar's state lives in the window, so main asks it (`tools:call`, answered
 | `send_prompt`, `wait_for` | Type a prompt into Claude in another session and send it; wait for that session's turn to end and get its reply |
 | `add_note`, `list_notes`, `complete_note`, `remove_note` | The Today page's to-dos; a note is tied to the calling session unless told otherwise, can name a Linear issue, and with a time is a reminder (`remind` and `cancel_reminder` take `todo` to change it) |
 | `get_status` | What the Today page knows: the brief, sessions needing the user, reminders, pull requests, issues and to-dos |
-| `list_projects`, `set_projects` | The Today page's projects, each with its repositories and where its name comes from; name repositories (alike names merge them, null resets), undone as one |
+| `list_projects`, `set_projects`, `update_project` | The projects, each with its repositories, where its name comes from, and its color, icon and whether it has a favicon; name repositories (alike names merge them, null resets) or set a project's color and icon, each undone as one. `create_group` and `new_session` take a `project` |
 | `save_monitor`, `list_monitors`, `get_monitor`, `pause_monitor`, `remove_monitor`, `move_monitor` | Monitors (see "Monitors"); `save_monitor` and `move_monitor` put one in a group; `get_monitor` with `run: true` runs the allowed commands first, and lists problems such as a panel naming a field the rows don't have |
 
 Sessions and groups are named by id or exact name, and `session` defaults to the caller. Every input
@@ -481,6 +483,17 @@ behind it, hidden, so leaving it shows them at once. Showing any session or grou
   session, issue or the tab they were added on; prompts by session or folder. Tabs under the title
   choose one (`localStorage['deckterm.project']`), and every card on both tabs keeps to it. With one
   project or on the demo day there are no tabs.
+- **Projects in the sidebar**: the same choice narrows the sidebar. The project rail (`ProjectRail.tsx`)
+  beside it has a tile per project, Slack's workspaces, and ⌃⌘0…⌃⌘9 choose too (View menu). A group is in
+  the projects its sessions are in; a group or session that no repository places keeps the project it
+  was made in (`project` on it, set by `useRememberProjects`, and a group's kept up to date from its
+  sessions), and one in no project is listed in every project. Showing something the sidebar doesn't
+  list (`show` in `workspace.ts` calls `followView`) switches to its project, or to all of them; Needs
+  You, ⌘J, notifications, search and the Dock badge never filter. A tile shows the icon chosen for the
+  project, else its repository's favicon (`status:favicons`: `git ls-files` in a clone for a favicon,
+  apple-touch-icon or icon, svg first), else its initials, on the project's color; both are stored by
+  project name in the status settings (`projectLooks`). New sessions start in the chosen project's
+  newest folder, and auto-grouping only offers its groups.
 - **The journal**: `claude.ts` records each prompt and finished turn (`record` in `status.ts`), and
   main appends them to the day's file. Days before it began are read once from Claude Code's
   transcripts: typed prompts from interactive sessions in the last 14 days, named by the conversation's

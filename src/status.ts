@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { announce, getState, newId, orderedSessions, rememberFolder, setState, type Note, type Session, type SessionState, type State } from './store'
+import { announce, getState, newId, newProject, orderedSessions, rememberFolder, setState, type Note, type Session, type SessionState, type State } from './store'
 import { addToView, openPage, openSession } from './workspace'
 import { DEMO_NOTES, demoBrief, demoData, demoJournal, demoStandup } from './demo-status'
 import { currentProjects, learnRepos, selectedProject } from './projects'
@@ -93,7 +93,7 @@ function showDemo() {
 }
 
 const DEMO_SETTINGS: StatusSettings = {
-  ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], projects: {}, pings: true, linear: { connected: false }, github: null,
+  ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], projects: {}, projectLooks: {}, pings: true, linear: { connected: false }, github: null,
 }
 
 async function leaveDemo() {
@@ -135,6 +135,11 @@ export function collect(force = false) {
 
 export async function loadSettings() {
   set({ settings: await window.deck.statusSettings() })
+}
+
+/** Saves how projects look on the rail; nothing collected depends on it, so nothing is asked again. */
+export async function saveProjectLooks(projectLooks: Record<string, ProjectLook>) {
+  set({ settings: await window.deck.saveStatusSettings({ projectLooks }) })
 }
 
 export function settingsChanged(settings: StatusSettings) {
@@ -276,7 +281,7 @@ export type Placement = 'alone' | 'beside' | 'behind'
 
 function startSession(session: Omit<Session, 'id' | 'groupId'>, placement: Placement) {
   const id = newId()
-  setState(s => ({ sessions: [...s.sessions, { ...session, id, groupId: null }] }))
+  setState(s => ({ sessions: [...s.sessions, { ...session, id, groupId: null, project: newProject() }] }))
   if (placement === 'alone') openSession(id)
   else addToView(id, 'right', undefined, placement === 'behind')
   return id

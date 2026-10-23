@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Check, CircleAlert, FolderOpen, Sparkle, SquareTerminal } from 'lucide-react'
 import { Mark } from './Mark'
-import { newId, rememberFolder, setState, useStore, type Session } from './store'
+import { newId, newProject, rememberFolder, setState, useStore, type Session } from './store'
 import { openSession } from './workspace'
 
 type Setup = { claude: string | null; hooks: boolean }
@@ -34,6 +34,7 @@ export function Welcome({ onDemo }: { onDemo: () => void }) {
       groupId: null,
       runClaude,
       autoName: true,
+      project: newProject(),
     }
     setState(s => ({ sessions: [...s.sessions, session], lastCwd: folder }))
     rememberFolder(folder)

@@ -4,6 +4,7 @@ type SerializedGridNode = SerializedDockview['grid']['root']
 import { getState, GROUP_COLORS, monitorPane, newId, orderedSessions, paneMonitor, setState, viewIds, type Page, type View } from './store'
 import { ensureRunning, focus, settled } from './terminals'
 import { monitorList } from './monitors'
+import { followView } from './projects'
 
 export const SESSION_MIME = 'application/x-deckterm-session'
 export const MONITOR_MIME = 'application/x-deckterm-monitor'
@@ -146,6 +147,7 @@ export function show(view: View | null) {
   const before = paneIds()
 
   const ids = viewIds(getState(), view)
+  followView(ids)
   applying = true
   try {
     api.clear()

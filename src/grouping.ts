@@ -1,5 +1,6 @@
 import { addGroup, announce, getState, moveSession, removeGroup, updateGroup, updateSession, viewIds, type Session } from './store'
 import { groupRemoved, refreshGroupView } from './workspace'
+import { currentProjects } from './projects'
 
 const where = (s: Session) => {
   const branch = getState().git[s.id]?.branch
@@ -7,8 +8,12 @@ const where = (s: Session) => {
 }
 
 function describe(session: Session, prompt: string) {
-  const { groups, sessions } = getState()
-  const others = sessions.filter(s => s.id !== session.id)
+  // Only what's in the session's project, so work for one isn't filed with another's.
+  const projects = currentProjects()
+  const mine = projects.session(session.id)
+  const ours = (names: (string | undefined)[]) => !mine || !names.length || names.includes(mine)
+  const groups = getState().groups.filter(g => ours(projects.group(g.id)))
+  const others = getState().sessions.filter(s => s.id !== session.id && (s.groupId !== null || ours([projects.session(s.id)].filter(Boolean))))
   return [
     `Request: ${prompt.slice(0, 1500)}`,
     `Folder: ${where(session)}`,

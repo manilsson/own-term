@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('deck', {
   onChatEvent: callback => on('chat:event', callback),
   repoFolders: (repo, folders) => ipcRenderer.invoke('status:repo-folders', repo, folders),
   repos: folders => ipcRenderer.invoke('status:repos', folders),
+  projectFavicons: folders => ipcRenderer.invoke('status:favicons', folders),
   sessionFolders: (folders, repos) => ipcRenderer.invoke('status:folders', folders, repos),
   reviewWorktree: (folder, number) => ipcRenderer.invoke('status:review-worktree', folder, number),
   monitors: () => ipcRenderer.invoke('monitors:list'),

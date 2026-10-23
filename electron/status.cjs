@@ -20,7 +20,9 @@ const LINEAR_TTL = 2 * 60 * 1000
 const JOURNAL_KEEP = 90 * DAY
 const BACKFILL_DAYS = 14
 
-const DEFAULTS = { ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], linearTeams: [], pings: true, projects: {} }
+// The renderer's GROUP_COLORS (store.ts), which a project's color indexes.
+const GROUP_COLOR_COUNT = 11
+const DEFAULTS = { ai: true, model: 'sonnet', instructions: '', reviewPrompt: '', prScope: 'all', mutedRepos: [], linearTeams: [], pings: true, projects: {}, projectLooks: {} }
 const MODELS = ['sonnet', 'opus', 'haiku']
 
 const clip = (text, max) => (typeof text === 'string' ? (text.length > max ? `${text.slice(0, max)}…` : text) : undefined)
@@ -66,6 +68,7 @@ module.exports = function status({ app, ipcMain, safeStorage, run, readSettings,
       mutedRepos: Array.isArray(s.mutedRepos) ? s.mutedRepos : [],
       pings: s.pings !== false,
       projects: s.projects && typeof s.projects === 'object' ? s.projects : {},
+      projectLooks: s.projectLooks && typeof s.projectLooks === 'object' ? s.projectLooks : {},
       linear: s.linearKey && s.linearUser
         ? { connected: true, user: s.linearUser, teams: s.linearTeamList ?? [], selected: s.linearTeams ?? [] }
         : { connected: false },
@@ -88,11 +91,21 @@ module.exports = function status({ app, ipcMain, safeStorage, run, readSettings,
       next.projects = Object.fromEntries(Object.entries(patch.projects)
         .filter(([repo, name]) => typeof name === 'string' && name.trim()).slice(0, 200).map(([repo, name]) => [repo, oneLine(name, 40)]))
     }
+    if (patch?.projectLooks && typeof patch.projectLooks === 'object') {
+      const look = l => ({
+        ...(Number.isInteger(l?.color) && l.color >= 0 && l.color < GROUP_COLOR_COUNT && { color: l.color }),
+        ...(typeof l?.icon === 'string' && l.icon.length <= 40 && { icon: l.icon }),
+      })
+      next.projectLooks = Object.fromEntries(Object.entries(patch.projectLooks).slice(0, 200)
+        .map(([name, l]) => [name, look(l)]).filter(([name, l]) => name && name.length <= 200 && Object.keys(l).length))
+    }
     if (Array.isArray(patch?.linearTeams)) next.linearTeams = patch.linearTeams.filter(t => typeof t === 'string').slice(0, 50)
     store(next)
-    // What's shown and what Claude reads both change with these.
-    githubCache = null
-    linearCache = null
+    // What's shown and what Claude reads both change with these; a project's look changes neither.
+    if (Object.keys(next).some(k => k !== 'projectLooks')) {
+      githubCache = null
+      linearCache = null
+    }
     return publicSettings()
   })
 
@@ -547,6 +560,43 @@ module.exports = function status({ app, ipcMain, safeStorage, run, readSettings,
     }
     return { roots, clones }
   })
+
+  // Where a site or app usually keeps its icon; git matches `*` across folders.
+  const ICON_PATHS = ['*favicon*.svg', '*favicon*.png', '*favicon*.ico', '*apple-touch-icon*.png', '*icon.svg', '*icon.png']
+  const ICON_TYPES = { svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon' }
+  const favicons = new Map()
+
+  /** A data URL of the icon a repository's clone in one of `folders` keeps, or null: svg first, a dev variant last. */
+  function faviconOf(repo, folders) {
+    if (!folders.length) return null
+    if (!favicons.has(repo)) {
+      favicons.set(repo, (async () => {
+        let root = null
+        for (const folder of folders) if ((root = await checkoutOf(folder))) break
+        // Not remembered, so a clone found later is still looked in.
+        if (!root) {
+          favicons.delete(repo)
+          return null
+        }
+        const listed = await run('git', ['-C', root, 'ls-files', '--', ...ICON_PATHS], { timeout: 5000, maxBuffer: 4 << 20 }).catch(() => '')
+        const rank = { svg: 0, png: 1, ico: 2 }
+        const found = listed.split('\n')
+          .filter(f => /(^|\/)(favicon[^/]*|apple-touch-icon[^/]*|icon)\.(svg|png|ico)$/i.test(f) && !/(^|\/)(node_modules|test|tests|fixtures|vendor)\//i.test(f))
+          // lstat, so a link in someone's repository can't have main read a file outside it.
+          .map(f => ({ f, ext: f.split('.').pop().toLowerCase(), stat: fs.lstatSync(path.join(root, f), { throwIfNoEntry: false }) }))
+          .filter(x => x.stat?.isFile() && x.stat.size > 0 && x.stat.size <= 256 * 1024)
+          .map(x => ({ ...x, size: x.stat.size }))
+          .sort((a, b) => /dev/i.test(a.f) - /dev/i.test(b.f) || rank[a.ext] - rank[b.ext] || a.f.split('/').length - b.f.split('/').length || b.size - a.size)
+        if (!found.length) return null
+        const file = await fsp.readFile(path.join(root, found[0].f))
+        return `data:${ICON_TYPES[found[0].ext]};base64,${file.toString('base64')}`
+      })().catch(() => null))
+    }
+    return favicons.get(repo)
+  }
+
+  ipcMain.handle('status:favicons', async (_e, folders) =>
+    Object.fromEntries(await Promise.all(Object.entries(folders ?? {}).map(async ([repo, of]) => [repo, Array.isArray(of) ? await faviconOf(repo, of.filter(f => typeof f === 'string').slice(0, 20)) : null]))))
 
   ipcMain.handle('status:repos', async (_e, folders) => Object.fromEntries(await Promise.all(folders.map(async f => [f, await repoAt(f)]))))
 

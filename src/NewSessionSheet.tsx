@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FolderOpen, GitBranch, Sparkle } from 'lucide-react'
-import { groupColor, newId, rememberFolder, setState, useStore, type Session } from './store'
+import { groupColor, newId, newProject, rememberFolder, setState, useStore, type Session } from './store'
 import { openSession } from './workspace'
 import { statusState } from './status'
-import { useProjects } from './projects'
+import { projectFolder, useProjects, useSidebarScope } from './projects'
 
 const home = window.deck.homeDir
 const tilde = (path: string) => (path === home || path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path)
@@ -22,12 +22,14 @@ export function NewSessionSheet({ groupId: initialGroup, cwd: initialCwd, onDone
 }) {
   const lastCwd = useStore(s => s.lastCwd)
   const recentFolders = useStore(s => s.recentFolders)
-  const groups = useStore(s => s.groups)
+  const scope = useSidebarScope()
   const sessions = useStore(s => s.sessions)
   // Opened from a group, it starts in that group; otherwise in none, for Claude to sort.
   const [groupId, setGroupId] = useState(initialGroup)
+  // The chosen project's groups, as the sidebar lists them, and the one it was opened from.
+  const groups = useStore(s => s.groups).filter(g => scope.group(g) || g.id === initialGroup)
   const [name, setName] = useState('')
-  const [cwd, setCwd] = useState(initialCwd ?? lastCwd)
+  const [cwd, setCwd] = useState(() => initialCwd ?? projectFolder() ?? lastCwd)
   const [runClaude, setRunClaude] = useState(true)
   const [worktree, setWorktree] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -62,15 +64,21 @@ export function NewSessionSheet({ groupId: initialGroup, cwd: initialCwd, onDone
     const repos = projects.list.flatMap(p => p.repos)
     window.deck.sessionFolders(folders, repos).then(({ roots, clones }) => {
       if (!current) return
-      const inProjects = projects.list.flatMap(p => p.repos.filter(r => clones[r]).map(r => ({ folder: clones[r], project: p.name })))
+      // The chosen project's first; sort keeps the rest in their order.
+      const chosen = new Set(scope.project?.repos.map(r => r.toLowerCase()))
+      const first = (repo?: string | null) => (repo && chosen.has(repo.toLowerCase()) ? 0 : 1)
+      const inProjects = projects.list.flatMap(p => p.repos.filter(r => clones[r]).map(r => ({ folder: clones[r], project: p.name, repo: r })))
+        .sort((a, b) => first(a.repo) - first(b.repo))
       const taken = new Set(inProjects.map(p => p.folder))
+      const repoOf = Object.fromEntries(Object.values(roots).map(r => [r.root, r.repo]))
       const recent = [...new Set(folders.map(f => roots[f]?.root).filter((f): f is string => !!f && !taken.has(f) && !scratch(f)))]
+        .sort((a, b) => first(repoOf[a]) - first(repoOf[b]))
       setOffered({ projects: inProjects, recent: recent.slice(0, 4) })
     }, () => {})
     return () => {
       current = false
     }
-  }, [recentFolders, sessions, projects])
+  }, [recentFolders, sessions, projects, scope.project])
   const recents = offered.recent.filter(f => f !== cwd)
 
   // A worktree being created can't be stopped halfway, so the sheet stays until it's done.
@@ -101,6 +109,7 @@ export function NewSessionSheet({ groupId: initialGroup, cwd: initialCwd, onDone
       groupId,
       runClaude,
       autoName: !name.trim(),
+      project: newProject(),
     }
     setState(s => ({ sessions: [...s.sessions, session], lastCwd: cwd.trim() }))
     rememberFolder(cwd.trim())

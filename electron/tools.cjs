@@ -18,7 +18,8 @@ const INSTRUCTIONS = [
   'and change that: list and describe sessions, rename them, give them icons and move them, make and change',
   'groups, set reminders, start and end sessions, send a prompt to Claude in another session, put sessions on',
   'screen, keep to-dos on the user\'s Today page, read what is on their plate (get_status), name the projects its',
-  'Today page is grouped by (list_projects, set_projects), and make monitors:',
+  'sidebar and Today page are grouped by and set their color and icon (list_projects, set_projects, update_project),',
+  'and make monitors:',
   'pages in the sidebar that Own Term fills by running commands on a schedule, with rules that notify the user',
   '(save_monitor). Use them when the user asks you to. Never rename, move, reorganize, change the icon of or',
   'end a session, send a prompt, add or change a to-do, change projects, or make or change a monitor on your own initiative,',
@@ -138,12 +139,13 @@ const RULE = {
   required: ['name', 'source', 'level'],
 }
 const group = { type: 'string', description: 'Group id or exact name.' }
+const project = { type: 'string', description: 'A project\'s exact name, from list_projects. Defaults to the one the sidebar shows.' }
 const color = { type: 'string', description: `One of ${COLORS}.` }
 
 const TOOLS = [
   {
     name: 'list_sessions',
-    description: 'Every session and group in Own Term, with the monitors each group holds: each session\'s id, name, group, status (working, needs input, your turn, reminder, running a command, idle), folder, git branch, reminder and what it last did or said. The session you are running in is marked `you`.',
+    description: 'Every session and group in Own Term, with the monitors each group holds and the projects it is in (none: listed in every project): each session\'s id, name, group, project, status (working, needs input, your turn, reminder, running a command, idle), folder, git branch, reminder and what it last did or said. The session you are running in is marked `you`.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -180,6 +182,7 @@ const TOOLS = [
         color,
         sessions: { type: 'array', items: { type: 'string' }, description: 'Session ids or names.' },
         monitors: { type: 'array', items: { type: 'string' }, description: 'Monitor ids or names.' },
+        project: { ...project, description: 'The project it is listed under while its sessions\' repositories don\'t say. Defaults to the one the sidebar shows.' },
       },
       required: ['name'],
     },
@@ -248,6 +251,7 @@ const TOOLS = [
         name: { type: 'string', description: 'Otherwise Own Term names it from the first prompt.' },
         icon: { type: 'string', enum: ICONS, description: 'An icon for it, as in set_session_icon.' },
         group,
+        project: { ...project, description: 'The project it belongs to, when its folder is in no repository that says. Defaults to the one the sidebar shows.' },
         prompt: { type: 'string' },
         claude: { type: 'boolean' },
         worktree: { type: 'string' },
@@ -336,7 +340,7 @@ const TOOLS = [
   },
   {
     name: 'list_projects',
-    description: 'The projects the user\'s Today page is grouped by, each with its repositories (owner/name) and where its name comes from: set by the user, the sidebar group that holds the repository\'s sessions, or the repository\'s own name. Sessions, pull requests, issues, to-dos and prompts are placed by their repository; the Today page shows one project at a time, with a brief, standup and chat of its own.',
+    description: 'The projects the user\'s sidebar and Today page are grouped by, each with its repositories (owner/name), where its name comes from (set by the user, the sidebar group that holds the repository\'s sessions, or the repository\'s own name), its color and icon on the project rail (a session icon\'s name, `favicon` or `initials`) and whether its repository has a favicon. Sessions, pull requests, issues, to-dos and prompts are placed by their repository; the sidebar and the Today page show one project at a time, or all.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -352,6 +356,19 @@ const TOOLS = [
         },
       },
       required: ['projects'],
+    },
+  },
+  {
+    name: 'update_project',
+    description: 'Sets how a project looks on the rail beside the sidebar: its color and its icon. `icon` is a session icon\'s name, `favicon` (its repository\'s own icon, the default when it has one) or `initials`; null gives either back its default. Undone as one.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: { type: 'string', description: 'The project\'s exact name, from list_projects.' },
+        color: { type: ['string', 'null'], description: `One of ${COLORS}, or null.` },
+        icon: { type: ['string', 'null'], enum: [...ICONS, 'favicon', 'initials', null] },
+      },
+      required: ['project'],
     },
   },
   {
@@ -415,7 +432,7 @@ const TOOLS = [
   },
   {
     name: 'show_sessions',
-    description: 'Puts sessions and monitors on screen: one alone, or several side by side, monitors after sessions.',
+    description: 'Puts sessions and monitors on screen: one alone, or several side by side, monitors after sessions. When the sidebar shows another project, it switches to theirs (to all projects if they span several).',
     inputSchema: {
       type: 'object',
       properties: {

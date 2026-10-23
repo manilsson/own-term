@@ -17,6 +17,8 @@ export interface Group {
   namedFrom?: string
   /** Monitors shown with its sessions, by monitor id; a monitor belongs to one group at most. */
   monitors?: string[]
+  /** The project it was made in or last placed in; only for when its sessions' repositories don't say. */
+  project?: string
 }
 
 export interface Session {
@@ -42,6 +44,8 @@ export interface Session {
   firstPrompt?: string
   /** A name from SESSION_ICONS, shown before the session's name; see sessionIcons.ts. */
   icon?: string
+  /** The project it was made in; only for when its repository, or its group's, doesn't say. */
+  project?: string
 }
 
 export type Page = 'status' | 'reminders' | { monitor: string } | null
@@ -404,11 +408,12 @@ export function updateGroup(id: string, patch: Partial<Group>) {
   setState(s => ({ groups: s.groups.map(g => (g.id === id ? { ...g, ...patch } : g)) }))
 }
 
-/** Collapses every group, or opens them all when they're all collapsed already. */
-export function toggleAllGroups() {
+/** Collapses every group in `ids` (all by default), or opens them all when they're all collapsed already. */
+export function toggleAllGroups(ids?: string[]) {
   setState(s => {
-    const collapsed = s.groups.some(g => !g.collapsed)
-    return { groups: s.groups.map(g => ({ ...g, collapsed })) }
+    const shown = (g: Group) => !ids || ids.includes(g.id)
+    const collapsed = s.groups.some(g => shown(g) && !g.collapsed)
+    return { groups: s.groups.map(g => (shown(g) ? { ...g, collapsed } : g)) }
   })
 }
 
@@ -439,10 +444,17 @@ export function moveGroup(id: string, targetId: string, after: boolean) {
   })
 }
 
+// The project something made now belongs to; projects.ts says which, as the store can't import it.
+let projectForNew: () => string | undefined = () => undefined
+export const setProjectForNew = (get: () => string | undefined) => void (projectForNew = get)
+/** The project a group or session made now goes in: the one chosen, if any. Not for one put back. */
+export const newProject = () => projectForNew()
+
 export function addGroup() {
   const id = newId()
+  const project = newProject()
   setState(s => ({
-    groups: [...s.groups, { id, name: 'New group', collapsed: false, color: s.groups.length % GROUP_COLORS.length, autoName: true }],
+    groups: [...s.groups, { id, name: 'New group', collapsed: false, color: s.groups.length % GROUP_COLORS.length, autoName: true, ...(project && { project }) }],
   }))
   return id
 }

@@ -16,6 +16,8 @@ import { Editable } from './Editable'
 import { StatusIcon } from './StatusIcon'
 import { iconFor } from './sessionIcons'
 import { NewSessionSheet } from './NewSessionSheet'
+import { chooseProject, currentProjects, useRememberProjects } from './projects'
+import { ProjectRail, RAIL_WIDTH, useRailShown } from './ProjectRail'
 import { ReminderSheet } from './ReminderSheet'
 import { presets, reminderNote, setReminder } from './reminders'
 import { attach, clear, copySelection, detach, ensureRunning, fit, focus, focusedSession, holdFit } from './terminals'
@@ -446,8 +448,10 @@ export function App() {
   const [info, setInfo] = useState(loadInfo)
   const infoOpen = info.open
   const [palette, setPalette] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState<false | 'top' | 'projects'>(false)
   const page = useStore(s => s.page)
+  useRememberProjects()
+  const railShown = useRailShown()
 
   useEffect(() => localStorage.setItem(SIDEBAR_KEY, JSON.stringify(sidebar)), [sidebar])
   useEffect(() => localStorage.setItem(INFO_KEY, JSON.stringify(info)), [info])
@@ -534,7 +538,7 @@ export function App() {
       showStatus()
       write('standup')
     }
-    if (action === 'settings') setSettingsOpen(true)
+    if (action === 'settings') setSettingsOpen('top')
     if (action === 'undo-last') undoLast()
     if (action === 'reopen-closed') reopenClosed()
     if (action === 'undo') {
@@ -562,6 +566,10 @@ export function App() {
       if (confirmed) loadDemo()
     }
     if (action === 'split-right') splitRight()
+    if (action === 'project' && arg !== undefined) {
+      const project = arg < 0 ? { name: '' } : currentProjects().list[arg]
+      if (project) chooseProject(project.name)
+    }
     if (action === 'select' && arg !== undefined) {
       const session = orderedSessions(getState())[arg]
       if (session) openSession(session.id)
@@ -624,8 +632,9 @@ export function App() {
         </button>
       </header>
       <div className="app-body">
-        <div className="sidebar-slot" style={{ width: sidebar.hidden ? 0 : sidebar.width + 12 }} inert={sidebar.hidden}>
-          <Sidebar width={sidebar.width} onNewSession={groupId => setCreating({ groupId })} />
+        <div className="sidebar-slot" style={{ width: sidebar.hidden ? 0 : sidebar.width + 12 + (railShown ? RAIL_WIDTH : 0) }} inert={sidebar.hidden}>
+          <ProjectRail onNameProjects={() => setSettingsOpen('projects')} />
+          <Sidebar width={sidebar.width} onNewSession={groupId => setCreating({ groupId })} onNameProjects={() => setSettingsOpen('projects')} />
           <div className="sidebar-resizer" onPointerDown={startResize} />
         </div>
         <main className="workspace">
@@ -647,7 +656,7 @@ export function App() {
               scrollbars="native"
               onReady={e => initWorkspace(e.api)}
             />
-            {page === 'status' && <StatusPage onSettings={() => setSettingsOpen(true)} />}
+            {page === 'status' && <StatusPage onSettings={() => setSettingsOpen('top')} tabs={!railShown || sidebar.hidden} />}
             {page === 'reminders' && <RemindersPage />}
             {typeof page === 'object' && page && <MonitorPage key={page.monitor} id={page.monitor} />}
           </div>
@@ -664,7 +673,7 @@ export function App() {
       <Launch />
       {palette && <Palette actions={paletteActions} onClose={() => setPalette(false)} />}
       {reminding && <ReminderSheet key={reminding} />}
-      {settingsOpen && <SettingsSheet onDone={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsSheet section={settingsOpen} onDone={() => setSettingsOpen(false)} />}
       {creating && <NewSessionSheet groupId={creating.groupId} cwd={creating.cwd} onDone={() => setCreating(null)} />}
     </div>
   )

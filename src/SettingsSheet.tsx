@@ -7,7 +7,7 @@ import { useStore } from './store'
 // Settings (⌘,): what the Today page connects to and how Claude writes for it. The Linear key goes
 // straight to main, which encrypts it; the window only ever learns who it belongs to.
 
-export function SettingsSheet({ onDone }: { onDone: () => void }) {
+export function SettingsSheet({ section = 'top', onDone }: { section?: 'top' | 'projects'; onDone: () => void }) {
   const settings = useStatus(s => s.settings)
   // Focus goes to the sheet itself, so Escape closes it and nothing scrolls the sheet to a button.
   const sheet = useRef<HTMLDivElement>(null)
@@ -26,7 +26,7 @@ export function SettingsSheet({ onDone }: { onDone: () => void }) {
           <>
             <Linear settings={settings} save={save} />
             <Github settings={settings} save={save} />
-            <ProjectNames settings={settings} save={save} />
+            <ProjectNames settings={settings} save={save} scrollTo={section === 'projects'} />
             <ClaudeSettings settings={settings} save={save} />
           </>
         )}
@@ -160,8 +160,10 @@ function Github({ settings, save }: { settings: StatusSettings; save: Save }) {
 }
 
 /** A project name per repository; repositories named alike are one project on the Today page. */
-function ProjectNames({ settings, save }: { settings: StatusSettings; save: Save }) {
+function ProjectNames({ settings, save, scrollTo }: { settings: StatusSettings; save: Save; scrollTo: boolean }) {
   const projects = useProjects()
+  const section = useRef<HTMLDivElement>(null)
+  useEffect(() => void (scrollTo && section.current?.scrollIntoView({ block: 'start' })), [scrollTo])
   const sessions = useStore(s => s.sessions)
   const groups = useStore(s => s.groups)
   const repoAt = useRepos()
@@ -180,9 +182,9 @@ function ProjectNames({ settings, save }: { settings: StatusSettings; save: Save
   }
   if (!repos.length) return null
   return (
-    <div className="settings-section">
+    <div className="settings-section" ref={section}>
       <h3>Projects</h3>
-      <p className="settings-note">The Today page shows one project at a time. Give two repositories the same name to make them one project.</p>
+      <p className="settings-note">The sidebar and the Today page show one project at a time. Give two repositories the same name to make them one project.</p>
       <div className="form-box">
         {repos.map(repo => (
           <label key={repo} className="form-row">

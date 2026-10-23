@@ -152,6 +152,7 @@ const TOOL_WORDS: Record<string, string> = {
   get_status: 'Checked your status',
   list_projects: 'Read your projects',
   set_projects: 'Changed your projects',
+  update_project: 'Changed how a project looks',
   show_sessions: 'Opened sessions',
 }
 

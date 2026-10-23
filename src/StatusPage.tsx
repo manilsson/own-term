@@ -39,7 +39,8 @@ function greeting(now: Date) {
 
 const TAB_KEY = 'deckterm.statusTab'
 
-export function StatusPage({ onSettings }: { onSettings: () => void }) {
+/** `tabs`: show the project tabs, which the rail beside the sidebar stands in for while it's showing. */
+export function StatusPage({ onSettings, tabs }: { onSettings: () => void; tabs: boolean }) {
   const [tab, setTab] = useState<'today' | 'week'>(() => (localStorage.getItem(TAB_KEY) === 'week' ? 'week' : 'today'))
   useEffect(() => localStorage.setItem(TAB_KEY, tab), [tab])
   const project = useScope().project?.name ?? ''
@@ -58,7 +59,7 @@ export function StatusPage({ onSettings }: { onSettings: () => void }) {
     <div className="status-page">
       <div className={`status-inner ${tab}`}>
         <Header tab={tab} setTab={setTab} onSettings={onSettings} />
-        <ProjectTabs />
+        <ProjectTabs shown={tabs} />
         <div className="status-body" key={`${tab}:${project}`}>
           {tab === 'today' ? <Today onSettings={onSettings} /> : <Week />}
         </div>
@@ -101,10 +102,10 @@ function Header({ tab, setTab, onSettings }: { tab: 'today' | 'week'; setTab: (t
   )
 }
 
-/** Everything, or one project: every card on both tabs shows only what's in it. */
-function ProjectTabs() {
+/** Everything, or one project: every card on both tabs shows only what's in it. Beside the rail, which chooses the same, there are none. */
+function ProjectTabs({ shown }: { shown: boolean }) {
   const { projects, project } = useScope()
-  if (projects.list.length < 2) return null
+  if (!shown || projects.list.length < 2) return null
   return (
     <nav className="project-tabs" role="tablist" aria-label="Projects">
       {[{ name: '' }, ...projects.list].map(p => {

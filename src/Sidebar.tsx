@@ -15,8 +15,10 @@ import { formatDue, useNow } from './reminders'
 import {
   closePage, MONITOR_MIME, openPage, openSession, refreshGroupView, refreshView, renamePane, saveAsGroup, SESSION_MIME, showGroup, showWorking, togglePick,
 } from './workspace'
-import { isDemo, showStatus, todaySummary, useStatus, visibleNotes } from './status'
+import { githubOk, isDemo, showStatus, todaySummary, useStatus, visibleNotes } from './status'
 import { ago, formatValue, monitorMenu, showMonitor, useMonitors } from './monitors'
+import { useScope, useSidebarScope } from './projects'
+import { ProjectTitle } from './ProjectRail'
 
 const GROUP_MIME = 'application/x-deckterm-group'
 const NO_TITLES: Record<string, string> = {}
@@ -33,10 +35,18 @@ export const STATUS_LABEL: Record<SessionState, string> = {
   exited: 'Exited',
 }
 
-export function Sidebar({ width, onNewSession }: { width: number; onNewSession: (groupId: string | null) => void }) {
-  const groups = useStore(s => s.groups)
+export function Sidebar({ width, onNewSession, onNameProjects }: {
+  width: number
+  onNewSession: (groupId: string | null) => void
+  onNameProjects: () => void
+}) {
+  const allGroups = useStore(s => s.groups)
+  const scope = useSidebarScope()
+  // Until every session is placed, a chosen project's list would show everything and then shrink.
+  const placing = scope.waiting
+  const groups = placing ? [] : allGroups.filter(scope.group)
   const sessions = useStore(s => s.sessions)
-  const ordered = useMemo(() => orderedSessions({ groups, sessions }), [groups, sessions])
+  const ordered = useMemo(() => orderedSessions({ groups: allGroups, sessions }), [allGroups, sessions])
   const [query, setQuery] = useState('')
   // Programs retitle their terminal constantly (Claude while it works), and only search reads titles.
   const titles = useStore(s => (query.trim() ? s.titles : NO_TITLES))
@@ -49,11 +59,13 @@ export function Sidebar({ width, onNewSession }: { width: number; onNewSession: 
   const matches = q
     ? ordered.filter(s => `${s.name} ${titles[s.id] ?? ''} ${s.cwd}`.toLowerCase().includes(q))
     : null
-  const ungrouped = sessions.filter(s => s.groupId === null)
+  const ungrouped = placing ? [] : sessions.filter(s => s.groupId === null && scope.session(s))
   const anyOpen = groups.some(g => !g.collapsed)
+  const listed = groups.map(g => g.id)
 
   return (
     <aside className="sidebar" style={{ width }}>
+      <ProjectTitle onNameProjects={onNameProjects} />
       <label className="search-field">
         <Search size={13} strokeWidth={2} />
         <input
@@ -113,7 +125,7 @@ export function Sidebar({ width, onNewSession }: { width: number; onNewSession: 
                     <button
                       className="section-action"
                       title={anyOpen ? 'Collapse All Groups' : 'Expand All Groups'}
-                      onClick={toggleAllGroups}
+                      onClick={() => toggleAllGroups(listed)}
                     >
                       {anyOpen ? <ListChevronsDownUp size={14} strokeWidth={1.75} /> : <ListChevronsUpDown size={14} strokeWidth={1.75} />}
                     </button>
@@ -125,7 +137,7 @@ export function Sidebar({ width, onNewSession }: { width: number; onNewSession: 
               }
             >
               {groups.map(g => (
-                <GroupRows key={g.id} group={g} onNewSession={() => onNewSession(g.id)}>
+                <GroupRows key={g.id} group={g} listed={listed} onNewSession={() => onNewSession(g.id)}>
                   {[
                     ...sessions.filter(s => s.groupId === g.id).map(s => <SessionRow key={s.id} session={s} nested />),
                     ...monitors.filter(m => g.monitors?.includes(m.id)).map(m => <MonitorRow key={m.id} monitor={m} groupId={g.id} />),
@@ -266,7 +278,7 @@ function GroupSlot({ groupId, children }: { groupId: string; children: ReactNode
   )
 }
 
-function GroupRows({ group, onNewSession, children }: { group: Group; onNewSession: () => void; children: ReactNode[] }) {
+function GroupRows({ group, listed, onNewSession, children }: { group: Group; listed: string[]; onNewSession: () => void; children: ReactNode[] }) {
   // Folded away, the group stands in for its sessions: selected while one has focus, as Finder
   // selects a collapsed folder, and marked while any is on screen.
   const onScreen = useStore(s => viewIds(s, s.view).some(id => paneGroup(s, id) === group.id))
@@ -296,7 +308,7 @@ function GroupRows({ group, onNewSession, children }: { group: Group; onNewSessi
           onClick={e => e.detail < 2 && showGroup(group.id)}
           onContextMenu={e => {
             e.preventDefault()
-            groupMenu(group, onNewSession)
+            groupMenu(group, onNewSession, listed)
           }}
           title={group.collapsed ? undefined : 'Show side by side'}
         >
@@ -637,9 +649,15 @@ function SessionRow({ session, nested }: { session: Session; nested?: boolean })
 /** Opens the Today page: a third smart tile across both columns, its icon the date, as Reminders' Today is. */
 function TodayTile() {
   const page = useStore(s => s.page)
-  const notes = useStore(visibleNotes)
-  const sessions = useStore(s => s.sessions)
-  const data = useStatus(s => s.data)
+  const allNotes = useStore(visibleNotes)
+  const allSessions = useStore(s => s.sessions)
+  const allData = useStatus(s => s.data)
+  // What the page shows: with a project chosen, only its pull requests, reminders and to-dos.
+  const scope = useScope()
+  const notes = allNotes.filter(scope.note)
+  const sessions = allSessions.filter(scope.session)
+  const gh = githubOk(allData?.github)
+  const data = gh && allData && scope.project ? { ...allData, github: { ...gh, mine: gh.mine.filter(scope.pr), review: gh.review.filter(scope.pr) } } : allData
   const now = useNow()
   const date = new Date(now)
   const { count, text } = todaySummary({ notes, sessions }, data, now)

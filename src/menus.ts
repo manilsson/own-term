@@ -10,7 +10,7 @@ import { closePane, groupRemoved, isOpen, openSession, refreshGroupView, session
 const swatches = new Map<string, string>()
 
 /** A filled circle in the given color, as a PNG for a native menu item's icon. */
-function swatch(color: string) {
+export function swatch(color: string) {
   if (!swatches.has(color)) {
     const canvas = document.createElement('canvas')
     canvas.width = canvas.height = 24
@@ -136,7 +136,8 @@ export async function sessionMenu(session: Session, inPane = false) {
   }
 }
 
-export async function groupMenu(group: Group, onNewSession: () => void) {
+/** `listed`: the groups the sidebar lists, which Collapse All Groups is about. */
+export async function groupMenu(group: Group, onNewSession: () => void, listed: string[]) {
   const choice = await window.deck.popupMenu([
     { id: 'show', label: 'Show Side by Side' },
     { id: 'new', label: 'New Session in Group' },
@@ -144,7 +145,7 @@ export async function groupMenu(group: Group, onNewSession: () => void) {
     { id: 'rename', label: 'Rename' },
     { label: 'Color', submenu: colorItems(group) },
     { type: 'separator' },
-    { id: 'toggle-all', label: getState().groups.some(g => !g.collapsed) ? 'Collapse All Groups' : 'Expand All Groups' },
+    { id: 'toggle-all', label: getState().groups.some(g => listed.includes(g.id) && !g.collapsed) ? 'Collapse All Groups' : 'Expand All Groups' },
     { type: 'separator' },
     { id: 'delete', label: 'Delete Group…' },
   ])
@@ -152,7 +153,7 @@ export async function groupMenu(group: Group, onNewSession: () => void) {
   if (choice === 'show') showGroup(group.id)
   if (choice === 'new') onNewSession()
   if (choice === 'rename') renameGroup(group.id)
-  if (choice === 'toggle-all') toggleAllGroups()
+  if (choice === 'toggle-all') toggleAllGroups(listed)
   if (choice === 'delete') {
     const confirmed = await window.deck.confirm({
       message: `Delete “${group.name}”?`,
