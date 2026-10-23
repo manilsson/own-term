@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.64
+
+2026-10-23
+
+- Show the whole badge on a favicon's rail tile
+
 ## 0.1.63
 
 2026-10-23
