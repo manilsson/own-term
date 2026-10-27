@@ -489,9 +489,11 @@ behind it, hidden, so leaving it shows them at once. Showing any session or grou
   an unset one comes from its place); a project never placed follows, in the sidebar's order. A group is in
   the projects its sessions are in; a group or session that no repository places keeps the project it
   was made in (`project` on it, set by `useRememberProjects`, and a group's kept up to date from its
-  sessions), and one in no project is listed in every project. Showing something the sidebar doesn't
-  list (`show` in `workspace.ts` calls `followView`) switches to its project, or to all of them; Needs
-  You, ⌘J, notifications, search and the Dock badge never filter. A tile shows the icon chosen for the
+  sessions), and one in no project is listed in every project. A monitor goes with its group, or outside
+  one is in its folder's project, else that of the session that made it (`monitorProject`). Showing
+  something the sidebar doesn't list (`show` and a monitor's `openPage` in `workspace.ts` call
+  `followView`) switches to its project, or to all of them; Needs You, ⌘J, notifications, search and the
+  Dock badge never filter. A tile shows the icon chosen for the
   project, else its repository's favicon (`status:favicons`: `git ls-files` in a clone for a favicon,
   apple-touch-icon or icon, svg first), else its initials, on the project's color; both are stored by
   project name in the status settings (`projectLooks`). New sessions start in the chosen project's

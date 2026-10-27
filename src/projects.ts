@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
-import { getState, GROUP_COLORS, orderedSessions, setProjectForNew, updateGroup, useStore, viewIds, type Group, type Note, type Session, type State } from './store'
+import { getState, GROUP_COLORS, monitorPane, orderedSessions, setProjectForNew, updateGroup, useStore, viewIds, type Group, type Note, type Session, type State } from './store'
 import { githubOk, isDemo, linearOk, loadSettings, saveProjectOrder, statusState, useStatus } from './status'
 import { SESSION_ICONS } from './sessionIcons'
 import { DEMO_PROJECTS, demoRepo } from './demo-data'
@@ -206,14 +206,21 @@ export function selectedProject(projects = currentProjects()): ProjectDef | unde
  * Going to something the sidebar doesn't list changes the project to the one it's in, or to all of
  * them when it spans several, so what's on screen is always in the sidebar.
  */
-export function followView(ids: string[]) {
+export function followView(ids: string[], monitors: Pick<MonitorSummary, 'id' | 'folder' | 'by'>[] = []) {
   const projects = currentProjects()
   const project = selectedProject(projects)
   if (!project) return
-  const { sessions } = getState()
+  const { sessions, groups } = getState()
+  const own = (name?: string) => (name ? [name] : [])
   // Listed as the sidebar lists them: in a group by the group's projects, otherwise by its own.
-  const placed = ids.flatMap(id => sessions.filter(x => x.id === id))
-    .map(x => (x.groupId ? projects.group(x.groupId) : [projects.session(x.id)].filter((n): n is string => !!n)))
+  const placed = ids.flatMap(id => {
+    const session = sessions.find(x => x.id === id)
+    if (session) return [session.groupId ? projects.group(session.groupId) : own(projects.session(session.id))]
+    const monitor = monitors.find(m => monitorPane(m.id) === id)
+    if (!monitor) return []
+    const group = groups.find(g => g.monitors?.includes(monitor.id))
+    return [group ? projects.group(group.id) : own(monitorProject(projects, repos, monitor))]
+  })
   const listedIn = (name: string) => placed.every(names => !names.length || names.includes(name))
   if (listedIn(project.name)) return
   chooseProject(projects.list.find(p => listedIn(p.name))?.name ?? '')
@@ -250,6 +257,15 @@ export function useScope() {
 }
 
 /**
+ * The project a monitor outside a group is in: its folder's, else that of the session whose Claude
+ * made it; none, and it's listed in every project.
+ */
+export function monitorProject(projects: Projects, repoAt: Record<string, string | null>, m: Pick<MonitorSummary, 'folder' | 'by'>) {
+  const listed = (name?: string) => (name && projects.list.some(p => p.name === name) ? name : undefined)
+  return listed(projects.repo(m.folder ? repoAt[m.folder] : undefined)) ?? listed(projects.session(m.by))
+}
+
+/**
  * What the sidebar lists: the chosen project's groups and sessions, and those in no project, which are
  * listed in every one. Not `ready` until every session's repository and the project names are known.
  */
@@ -279,8 +295,9 @@ export function useSidebarScope() {
       waiting: !ready && !!name,
       session: (x: Pick<Session, 'id'>) => is([projects.session(x.id)].filter((n): n is string => !!n)),
       group: (g: Pick<Group, 'id'>) => is(projects.group(g.id)),
+      monitor: (m: Pick<MonitorSummary, 'folder' | 'by'>) => is([monitorProject(projects, repoAt, m)].filter((n): n is string => !!n)),
     }
-  }, [projects, project, ready, name])
+  }, [projects, project, ready, name, repoAt])
 }
 
 // Placed once, a session that moves to a folder not yet asked about keeps its place meanwhile rather

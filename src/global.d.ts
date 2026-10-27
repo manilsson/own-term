@@ -333,6 +333,8 @@ interface MonitorSummary {
   icon?: string
   /** The session whose Claude made it. */
   by?: string
+  /** Where its commands run unless a source says otherwise; it's in this folder's project. */
+  folder: string
   created: number
   state: MonitorState
   paused: boolean

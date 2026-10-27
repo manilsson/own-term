@@ -17,7 +17,7 @@ import {
 } from './workspace'
 import { githubOk, isDemo, showStatus, todaySummary, useStatus, visibleNotes } from './status'
 import { ago, formatValue, monitorMenu, showMonitor, useMonitors } from './monitors'
-import { useScope, useSidebarScope } from './projects'
+import { learnRepos, useScope, useSidebarScope } from './projects'
 import { ProjectTitle } from './ProjectRail'
 
 const GROUP_MIME = 'application/x-deckterm-group'
@@ -706,7 +706,11 @@ function RemindersTile() {
 function Monitors() {
   const all = useMonitors(list => list)
   const groups = useStore(s => s.groups)
-  const monitors = all.filter(m => !groups.some(g => g.monitors?.includes(m.id)))
+  const scope = useSidebarScope()
+  // Placed by their folders' repositories, which the sessions' don't always include.
+  const folders = all.map(m => m.folder).join('\n')
+  useEffect(() => void learnRepos(folders.split('\n').filter(Boolean)), [folders])
+  const monitors = scope.waiting ? [] : all.filter(m => !groups.some(g => g.monitors?.includes(m.id)) && scope.monitor(m))
   // The demo day's screenshots show only invented work.
   const demo = useStore(isDemo)
   if (!monitors.length || demo) return null

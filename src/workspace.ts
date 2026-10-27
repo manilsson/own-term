@@ -147,7 +147,7 @@ export function show(view: View | null) {
   const before = paneIds()
 
   const ids = viewIds(getState(), view)
-  followView(ids)
+  followView(ids, monitorList())
   applying = true
   try {
     api.clear()
@@ -177,6 +177,7 @@ export function show(view: View | null) {
 export function openPage(page: NonNullable<Page> = 'status') {
   // A terminal keeping focus would take the typing meant for the page.
   ;(document.activeElement as HTMLElement | null)?.blur()
+  if (typeof page === 'object') followView([monitorPane(page.monitor)], monitorList())
   setState(() => ({ page }))
 }
 

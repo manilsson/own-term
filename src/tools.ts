@@ -8,7 +8,7 @@ import { lastReply, promptClaude } from './claude'
 import { endSessionNow } from './menus'
 import { addNote, dropNote, removeNote, setNoteDone, short, updateNote } from './notes'
 import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithClaude, saveProjectLooks, saveProjectOrder, settingsChanged, startIssueIn, statusState, statusText } from './status'
-import { currentLooks, currentProjects, knownRepos, placeProject, resolveProjects } from './projects'
+import { currentLooks, currentProjects, knownRepos, monitorProject, placeProject, resolveProjects } from './projects'
 import { addToView, closePage, groupRemoved, openSession, refreshGroupView, refreshView, renamePane, show } from './workspace'
 import { monitorList, refreshMonitors, removeMonitor, setPaused } from './monitors'
 
@@ -572,18 +572,24 @@ function listMonitors(): ToolResult {
   const list = monitorList()
   if (!list.length) return { text: 'No monitors.' }
   const { groups } = getState()
+  const projects = currentProjects()
   return {
-    text: JSON.stringify(list.map(m => ({
-      id: m.id,
-      name: m.name,
-      group: groups.find(g => g.id === paneGroup(getState(), monitorPane(m.id)))?.name ?? null,
-      state: MONITOR_STATE[m.state],
-      firing: m.firing.length ? m.firing.map(f => `${f.name} (${f.level})`) : undefined,
-      snoozed: Object.keys(m.snoozed).length ? Object.keys(m.snoozed).length : undefined,
-      waiting_for_allow: m.pending.length ? m.pending : undefined,
-      last_run: m.lastRun ? new Date(m.lastRun).toLocaleString() : undefined,
-      error: m.error,
-    })), null, 1),
+    text: JSON.stringify(list.map(m => {
+      const group = groups.find(g => g.id === paneGroup(getState(), monitorPane(m.id)))
+      return {
+        id: m.id,
+        name: m.name,
+        group: group?.name ?? null,
+        // In a group, its group's; null: listed in every project.
+        project: (group ? projects.group(group.id)[0] : monitorProject(projects, knownRepos(), m)) ?? null,
+        state: MONITOR_STATE[m.state],
+        firing: m.firing.length ? m.firing.map(f => `${f.name} (${f.level})`) : undefined,
+        snoozed: Object.keys(m.snoozed).length ? Object.keys(m.snoozed).length : undefined,
+        waiting_for_allow: m.pending.length ? m.pending : undefined,
+        last_run: m.lastRun ? new Date(m.lastRun).toLocaleString() : undefined,
+        error: m.error,
+      }
+    }), null, 1),
   }
 }
 
