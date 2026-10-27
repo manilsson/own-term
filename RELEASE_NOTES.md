@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.65
+
+2026-10-27
+
+- List each monitor in its own project
+- Put the demo day on the project rail, and retake the site's shots
+
 ## 0.1.64
 
 2026-10-23
