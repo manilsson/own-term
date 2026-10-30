@@ -117,6 +117,7 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
   const { projects, project } = useSidebarScope()
   const looks = useProjectLooks(projects)
   const waitingIds = useStore(s => Object.keys(s.needsSince).join(' '))
+  const workingIds = useStore(s => Object.keys(s.status).filter(id => s.status[id] === 'working').join(' '))
   const pick = usePicking()
   const tip = useTip()
   const shown = useRailShown()
@@ -133,6 +134,7 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
     const name = projects.session(id)
     if (name) waiting.set(name, (waiting.get(name) ?? 0) + 1)
   }
+  const working = new Set(workingIds.split(' ').filter(Boolean).map(id => projects.session(id)))
 
   return (
     <nav
@@ -201,6 +203,7 @@ export function ProjectRail({ onNameProjects }: { onNameProjects: () => void }) 
           >
             <TileIcon icon={look.icon} />
             {!!count && <span className="project-badge">{count}</span>}
+            {working.has(p.name) && <span className="project-working"><span className="spinner" /></span>}
           </button>
         )
       })}

@@ -396,6 +396,25 @@ button.crumb:hover {
   font: 700 10.5px/17px -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* On the corner opposite the badge, so a project can show both. */
+.project-working {
+  position: absolute;
+  bottom: -5px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--base);
+}
+
+.project-working .spinner {
+  width: 13px;
+  height: 13px;
+  border-top-color: var(--label);
+}
+
 /* Beside a rail tile, pointing at it. */
 .rail-tip {
   position: fixed;
