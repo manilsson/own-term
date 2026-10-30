@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.66
+
+2026-10-30
+
+- Show a spinner on a project's rail tile while its sessions work
+
 ## 0.1.65
 
 2026-10-27
