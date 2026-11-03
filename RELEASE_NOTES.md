@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.67
+
+2026-11-03
+
+- Move the sidebar toggle to the corner in full screen
+
 ## 0.1.66
 
 2026-10-30
