@@ -526,6 +526,9 @@ interface Window {
     onEditor(callback: (state: EditorState) => void): Unsubscribe
     accent(): string
     onAccent(callback: (color: string) => void): Unsubscribe
+    /** Whether the window is in macOS full screen, where the traffic lights are hidden. */
+    fullScreen(): boolean
+    onFullScreen(callback: (fullScreen: boolean) => void): Unsubscribe
     popupMenu(items: MenuItem[]): Promise<string | null>
     confirm(options: { message: string; detail?: string; confirm: string }): Promise<boolean>
     revealFile(file: string): void

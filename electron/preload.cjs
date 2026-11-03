@@ -43,6 +43,8 @@ contextBridge.exposeInMainWorld('deck', {
   onEditor: callback => on('editor', callback),
   accent: () => ipcRenderer.sendSync('app:accent'),
   onAccent: callback => on('accent', callback),
+  fullScreen: () => ipcRenderer.sendSync('app:fullscreen'),
+  onFullScreen: callback => on('fullscreen', callback),
   popupMenu: items => ipcRenderer.invoke('menu:popup', items),
   confirm: options => ipcRenderer.invoke('dialog:confirm', options),
   revealFile: file => ipcRenderer.send('files:reveal', file),

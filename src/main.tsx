@@ -8,4 +8,9 @@ const root = createRoot(document.getElementById('root')!)
 if (new URLSearchParams(location.search).has('panel')) {
   document.documentElement.classList.add('panel-page')
   import('./Panel').then(({ Panel }) => root.render(<Panel />))
-} else import('./App').then(({ App }) => root.render(<App />))
+} else {
+  const fullScreen = (on: boolean) => document.documentElement.classList.toggle('full-screen', on)
+  fullScreen(window.deck.fullScreen())
+  window.deck.onFullScreen(fullScreen)
+  import('./App').then(({ App }) => root.render(<App />))
+}

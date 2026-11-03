@@ -554,6 +554,7 @@ ipcMain.handle('setup:install-hooks', () => {
 
 // The preload runs sandboxed, without Node's os module.
 ipcMain.on('app:home', e => (e.returnValue = os.homedir()))
+ipcMain.on('app:fullscreen', e => (e.returnValue = win?.isFullScreen() ?? false))
 // The person's name, for the status page's greeting: git's, which is usually a real one, then macOS's
 // full name for the account, which is often the Mac's.
 ipcMain.on('app:user', e => {
@@ -901,6 +902,8 @@ function createWindow() {
     })
   }
   win.on('close', saveBounds)
+  win.on('enter-full-screen', () => send('fullscreen', true))
+  win.on('leave-full-screen', () => send('fullscreen', false))
   for (const event of ['show', 'hide', 'resized', 'minimize', 'restore', 'enter-full-screen', 'leave-full-screen']) {
     win.on(event, () => sizeLog(null, `window ${event}`, { bounds: win.getBounds(), visible: win.isVisible() }))
   }
