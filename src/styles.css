@@ -2146,7 +2146,165 @@ body.resizing .info-slot,
   background: var(--hover);
 }
 
+.footer-count {
+  flex-shrink: 0;
+}
+
+/* Takes the room between the count and the path, so a long row scrolls instead of pushing the path off. */
+.snippets {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.snippet-chip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  max-width: 180px;
+  padding: 0 10px;
+  overflow: hidden;
+  border: none;
+  border-radius: 7px;
+  background: var(--fill);
+  color: var(--label);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.snippet-chip:has(.prompt-tile) {
+  padding-left: 4px;
+}
+
+.snippet-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The icon in the chosen color on a darker shade of it; with no color, the plain fill. */
+.prompt-tile {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--fill);
+  color: var(--secondary);
+}
+
+.prompt-tile[style*='--prompt-color'] {
+  background: color-mix(in srgb, var(--prompt-color) 45%, black);
+  color: var(--prompt-color);
+}
+
+.snippet-chip:hover:not([aria-disabled='true']) {
+  background: var(--hover);
+}
+
+.snippet-chip[aria-disabled='true'] {
+  opacity: 0.45;
+}
+
+.snippet-add {
+  padding: 0 7px;
+  background: none;
+  color: var(--tertiary);
+}
+
+.snippet-add.labelled {
+  padding-right: 10px;
+}
+
+.snippet-add:hover {
+  color: var(--label);
+}
+
+.snippet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.sheet.snippet-editor {
+  position: fixed;
+  width: 380px;
+  padding: 4px 18px 18px;
+  animation: snippet-in 0.16s ease-out;
+}
+
+.prompt-look {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.prompt-icon-button {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+}
+
+.prompt-icon-button .prompt-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.prompt-icon-button:hover .prompt-tile {
+  outline: 2px solid var(--separator);
+  outline-offset: 2px;
+}
+
+.prompt-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prompt-swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.prompt-swatch.on {
+  outline-color: var(--label);
+}
+
+.snippet-editor .note-field {
+  min-height: 76px;
+}
+
+.snippet-editor .sheet-buttons {
+  margin-top: 18px;
+}
+
+@keyframes snippet-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 .footer-path {
+  flex-shrink: 0;
+  max-width: 40%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

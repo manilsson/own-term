@@ -36,6 +36,7 @@ import { MonitorPage } from './MonitorPage'
 import { RemindersPage } from './RemindersPage'
 import { monitorMenu, useMonitors } from './monitors'
 import { SettingsSheet } from './SettingsSheet'
+import { PromptBar } from './PromptBar'
 import { showStatus, write } from './status'
 import { setTheme, THEMES } from './themes'
 import { editorState } from './editor'
@@ -318,10 +319,11 @@ function Footer() {
   }, [notice, hovered])
   return (
     <footer className="workspace-footer">
-      <span>
+      <span className="footer-count">
         {count === 1 ? '1 session' : `${count} sessions`}
         {monitors > 0 && (monitors === 1 ? ' · 1 monitor' : ` · ${monitors} monitors`)}
       </span>
+      <PromptBar />
       {notice && (
         <span className="notice" key={notice.text} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           <Sparkle size={12} strokeWidth={2} />

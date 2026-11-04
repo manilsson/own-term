@@ -99,6 +99,17 @@ interface Undoable {
   undo: () => void
 }
 
+/** A saved prompt: `label` on its footer chip, `text` typed into the session. */
+export interface Snippet {
+  id: string
+  label: string
+  text: string
+  /** A name from SESSION_ICONS, drawn on a tile before the label. */
+  icon?: string
+  /** An index into GROUP_COLORS, for that tile. */
+  color?: number
+}
+
 /** A to-do on the status page, written there or by Claude through the add_note tool. */
 export interface Note {
   id: string
@@ -157,6 +168,8 @@ export interface State extends Saved {
   /** The Today page or a monitor's, shown over the panes, which keep running behind it. */
   page: Page
   notes: Note[]
+  /** Prompts written often, typed into a session from the footer. */
+  snippets: Snippet[]
 }
 
 /** The macOS system colors (dark appearance), in the order Finder lists its tags. */
@@ -286,9 +299,20 @@ function loadNotes(): Note[] {
   }
 }
 
+const SNIPPETS_KEY = 'deckterm.snippets'
+
+function loadSnippets(): Snippet[] {
+  try {
+    const snippets = JSON.parse(localStorage.getItem(SNIPPETS_KEY) ?? '[]')
+    return Array.isArray(snippets) ? snippets : []
+  } catch {
+    return []
+  }
+}
+
 const saved = load()
 let state: State = {
-  ...saved, ...loadRuntime(), recentFolders: loadRecentFolders(saved), page: null, notes: loadNotes(), titles: {}, git: {}, toasts: [], active: null, renaming: null, reminding: null, finding: null, notice: null, undoable: [], closed: loadClosed(), cleared: loadCleared(),
+  ...saved, ...loadRuntime(), recentFolders: loadRecentFolders(saved), page: null, notes: loadNotes(), snippets: loadSnippets(), titles: {}, git: {}, toasts: [], active: null, renaming: null, reminding: null, finding: null, notice: null, undoable: [], closed: loadClosed(), cleared: loadCleared(),
 }
 const listeners = new Set<() => void>()
 
@@ -316,6 +340,7 @@ export function setState(update: (s: State) => Partial<State>) {
   if (state.cleared !== before.cleared) localStorage.setItem(CLEARED_KEY, JSON.stringify(state.cleared))
   if (state.recentFolders !== before.recentFolders) localStorage.setItem(RECENT_KEY, JSON.stringify(state.recentFolders))
   if (state.notes !== before.notes) localStorage.setItem(NOTES_KEY, JSON.stringify(state.notes))
+  if (state.snippets !== before.snippets) localStorage.setItem(SNIPPETS_KEY, JSON.stringify(state.snippets))
   listeners.forEach(l => l())
 }
 

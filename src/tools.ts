@@ -1,12 +1,13 @@
 import {
   addGroup, announce, getState, GROUP_COLORS, monitorPane, moveMonitor, moveSession, newId, newProject, paneGroup, viewIds, orderedSessions, rememberFolder, removeGroup, setState, subscribe, updateGroup, updateSession,
-  type Group, type Note, type Session, type SessionState, type State,
+  type Group, type Note, type Session, type SessionState, type Snippet, type State,
 } from './store'
 import { cancelNoteReminder, cancelReminder, finishReminder, formatDue, setNoteReminder, setReminder } from './reminders'
 import { SESSION_ICONS } from './sessionIcons'
 import { lastReply, promptClaude } from './claude'
 import { endSessionNow } from './menus'
 import { addNote, dropNote, removeNote, setNoteDone, short, updateNote } from './notes'
+import { removeSnippet, saveSnippet, unsaveSnippet, type SnippetFields } from './prompts'
 import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithClaude, saveProjectLooks, saveProjectOrder, settingsChanged, startIssueIn, statusState, statusText } from './status'
 import { currentLooks, currentProjects, knownRepos, monitorProject, placeProject, resolveProjects } from './projects'
 import { addToView, closePage, groupRemoved, openSession, refreshGroupView, refreshView, renamePane, show } from './workspace'
@@ -466,6 +467,40 @@ async function setProjects(args: Record<string, unknown>): Promise<ToolResult> {
   return { text: `Done. ${listProjects().text}` }
 }
 
+function findPrompt(ref: unknown): Snippet {
+  const name = text(ref, 'The prompt', 200)
+  const { snippets } = getState()
+  const found = snippets.find(p => p.id === name) ?? snippets.find(p => p.label.toLowerCase() === name.toLowerCase())
+  if (!found) throw new ToolError(`No saved prompt “${short(name)}”; list_prompts shows them with their ids.`)
+  return found
+}
+
+function listPrompts(): ToolResult {
+  const { snippets } = getState()
+  if (!snippets.length) return { text: 'No saved prompts.' }
+  return {
+    text: JSON.stringify(snippets.map(p => ({
+      id: p.id,
+      label: p.label,
+      text: p.text,
+      icon: p.icon,
+      color: p.color === undefined ? undefined : GROUP_COLORS[p.color]?.name,
+    })), null, 1),
+  }
+}
+
+function savePrompt(args: Record<string, unknown>): ToolResult {
+  const existing = args.prompt === undefined ? undefined : findPrompt(args.prompt)
+  const fields: SnippetFields = {}
+  if (args.label !== undefined || !existing) fields.label = text(args.label, 'The label', 60)
+  if (args.text !== undefined || !existing) fields.text = text(args.text, 'The text', 4000)
+  if (args.icon !== undefined) fields.icon = args.icon === null ? null : iconName(args.icon)
+  if (args.color !== undefined) fields.color = args.color === null ? null : colorIndex(args.color) ?? null
+  const saved = saveSnippet(existing?.id, fields)
+  announce(`Claude ${existing ? 'changed' : 'added'} the prompt “${saved.label}”`, () => unsaveSnippet(saved.id, existing))
+  return { text: `${existing ? 'Changed' : 'Added'} (${saved.id}).` }
+}
+
 function listNotes(done: boolean): ToolResult {
   const notes = getState().notes.filter(n => done || !n.done)
   if (!notes.length) return { text: done ? 'No to-dos.' : 'No open to-dos.' }
@@ -847,6 +882,13 @@ async function run(caller: string, tool: string, args: Record<string, unknown>):
       removeNote(note.id, 'claude')
       return { text: 'Removed.' }
     }
+    case 'list_prompts':
+      return listPrompts()
+    case 'save_prompt':
+      return savePrompt(args)
+    case 'remove_prompt':
+      removeSnippet(findPrompt(args.prompt), 'Claude')
+      return { text: 'Removed.' }
     case 'get_status':
       return { text: await statusText() }
     case 'list_projects':

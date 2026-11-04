@@ -40,7 +40,8 @@ through `window.deck`, which `electron/preload.cjs` exposes and `src/global.d.ts
 | `src/status.ts`, `StatusPage.tsx`, `SettingsSheet.tsx`, `notes.ts` | The Today page (⌃⌘T): its data and actions, the page, Settings (⌘,), and the to-dos |
 | `src/projects.ts` | Projects: which project each session, group, pull request, issue, to-do and prompt is in, the one the sidebar and the Today page show, and how each looks on the rail (see "Today page") |
 | `src/ProjectRail.tsx` | The project rail beside the sidebar (a tile per project, its needs-you badge and working spinner), the sidebar's project title and a project's Color and Icon menu |
-| `src/IconPicker.tsx` | A searchable grid of the session icons, for a project's icon |
+| `src/IconPicker.tsx` | A searchable grid of the session icons, for a project's or a saved prompt's icon |
+| `src/PromptBar.tsx`, `prompts.ts` | Saved prompts in the footer: a click types one into the session on screen without sending it; Claude keeps them with list_prompts, save_prompt and remove_prompt |
 | `src/TodayChat.tsx` | The Today page's chat, one for each tab: the field floating at its bottom (⌘L) and the conversation above it |
 | `src/monitors.ts`, `MonitorPage.tsx`, `MonitorCharts.tsx` | The monitors as the window sees them (a summary of each, pushed by main), their sidebar menu and how values read; a monitor's page; its charts |
 | `src/themes.ts` | The color themes: each one's surfaces, accent and terminal palette, in dark and light |
