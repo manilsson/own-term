@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.68
+
+2026-11-04
+
+- Add saved prompts to the footer
+
 ## 0.1.67
 
 2026-11-03
