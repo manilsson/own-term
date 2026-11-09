@@ -22,6 +22,8 @@ import { ReminderSheet } from './ReminderSheet'
 import { presets, reminderNote, setReminder } from './reminders'
 import { attach, clear, copySelection, detach, ensureRunning, fit, focus, focusedSession, holdFit } from './terminals'
 import { FIND_AGAIN, FIND_NEXT, FindBar } from './FindBar'
+import { SecretPicker } from './SecretPicker'
+import { useSecretRequest } from './secrets'
 import { Palette, type PaletteAction } from './Palette'
 import {
   addToView, closeActivePane, closePage, equalize, initWorkspace, isOpen, openSession, renamePane, showGroup, toggleZoom, zoomFromHeader,
@@ -66,6 +68,7 @@ function TerminalPane({ params, api }: IDockviewPanelProps<{ sessionId: string }
   const finding = useStore(s => s.finding === params.sessionId)
   // A session's own browser floats over its terminal, in a window of its own (BrowserView.tsx).
   const browser = useBrowser(params.sessionId)
+  const secretRequest = useSecretRequest(params.sessionId)
   return (
     <div
       className="pane-frame"
@@ -82,6 +85,7 @@ function TerminalPane({ params, api }: IDockviewPanelProps<{ sessionId: string }
       <div className="pane" ref={ref} />
       {browser && !browser.windowed && !isBlank(browser) && <FloatingBrowser id={params.sessionId} />}
       {finding && <FindBar id={params.sessionId} />}
+      {secretRequest && <SecretPicker id={params.sessionId} why={secretRequest.why} />}
     </div>
   )
 }

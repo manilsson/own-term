@@ -3,6 +3,7 @@ import { ArrowUpRight, KeyRound, X } from 'lucide-react'
 import { DEFAULT_REVIEW, loadSettings, openLink, settingsChanged, useStatus } from './status'
 import { resolveProjects, useProjects, useRepos } from './projects'
 import { useStore } from './store'
+import { SecretsSettings } from './SecretsSettings'
 
 // Settings (⌘,): what the Today page connects to and how Claude writes for it. The Linear key goes
 // straight to main, which encrypts it; the window only ever learns who it belongs to.
@@ -28,6 +29,7 @@ export function SettingsSheet({ section = 'top', onDone }: { section?: 'top' | '
             <Github settings={settings} save={save} />
             <ProjectNames settings={settings} save={save} scrollTo={section === 'projects'} />
             <ClaudeSettings settings={settings} save={save} />
+            <SecretsSettings />
           </>
         )}
         <div className="sheet-buttons">

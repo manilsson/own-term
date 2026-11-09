@@ -135,6 +135,15 @@ interface HookEvent {
 }
 
 /** What a tool call answers. `transcript` asks main to add that Claude conversation's latest prompts. */
+/** A token Claude can be given (electron/secrets.cjs): never its value. */
+interface SecretEntry {
+  name: string
+  createdAt: number
+  updatedAt: number
+  /** Sessions holding a grant of it. */
+  holders: string[]
+}
+
 interface ToolResult {
   text: string
   isError?: boolean
@@ -623,7 +632,15 @@ interface Window {
     onHook(callback: (id: string, event: HookEvent) => void): Unsubscribe
     /** A tool call from Claude in session `id`, through Own Term's MCP server (electron/tools.cjs). */
     onToolCall(callback: (requestId: number, id: string, tool: string, args: Record<string, unknown>) => void): Unsubscribe
-    toolResult(requestId: number, result: ToolResult): void
+    toolResult(requestId: number, result: ToolResult | { picked?: string }): void
+    secrets: {
+      list(): Promise<SecretEntry[]>
+      add(name: string, value: string): Promise<{ error?: string }>
+      replace(name: string, value: string): Promise<{ error?: string }>
+      rename(from: string, to: string): Promise<{ error?: string }>
+      remove(name: string): Promise<{ error?: string }>
+      revoke(sessionId: string, name: string): Promise<{ error?: string }>
+    }
     onData(callback: (id: string, data: string) => void): Unsubscribe
     onExit(callback: (id: string, code: number) => void): Unsubscribe
     onMenu(callback: (action: string, arg?: number) => void): Unsubscribe

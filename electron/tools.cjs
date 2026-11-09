@@ -28,6 +28,7 @@ const INSTRUCTIONS = [
   'database, logs or an endpoint), offer a monitor instead of polling it yourself. Where a tool takes `session`,',
   'it defaults to the session you are running in. Sessions and groups can be given by id or by exact name.',
   'Every change shows the user a notice, with Undo where it can be undone.',
+  'When a task needs a token or key, ask for it with request_secret instead of asking the user to paste it.',
 ].join(' ')
 
 // The Today page's chat (status.cjs) calls in as this caller, which is no session.
@@ -305,6 +306,17 @@ const TOOLS = [
     },
   },
   {
+    name: 'request_secret',
+    description: "Asks the user for a token or key this task needs. They pick which one in Own Term, or decline; you can't choose or list them. Returns a file path holding it: use it only as $(cat '<path>') inside a command, quoted as the reply shows, and never print, echo, log or copy it anywhere else. Ask only when the task needs a credential.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        why: { type: 'string', description: 'What the token is for, in a sentence the user reads before choosing.' },
+      },
+      required: ['why'],
+    },
+  },
+  {
     name: 'add_note',
     description: 'Adds a to-do to the user\'s Today page in Own Term, where they plan their work; their brief and standup read it. Use it when the user asks you to note, remember or plan something. It is tied to the session you are running in unless `session` says another, or null for none. With `in_minutes` or `at` it is also a reminder: the user is notified then, and it waits on the Reminders page until checked off. Use that for a reminder that isn\'t about coming back to a session, with `session: null`.',
     inputSchema: {
@@ -476,7 +488,7 @@ function writeMcpConfig(file) {
       [NAME]: {
         type: 'http',
         url: 'http://127.0.0.1:${DECKTERM_PORT}/mcp/${DECKTERM_SESSION}',
-        headers: { 'X-Deckterm-Token': '${DECKTERM_TOKEN}' },
+        headers: { 'X-Deckterm-Token': '${DECKTERM_TOKEN}', 'X-Deckterm-Session-Key': '${DECKTERM_SESSION_KEY}' },
       },
     },
   }
@@ -485,7 +497,8 @@ function writeMcpConfig(file) {
 }
 
 /** Answers one JSON-RPC message from Claude Code; `ask` runs a tool in the window. */
-async function handleMcp(sessionId, message, ask, findTranscript) {
+/** `verified`: the caller sent its session's own key, so it is that session and not another shell. */
+async function handleMcp(sessionId, message, ask, findTranscript, secrets, verified = false) {
   const { id, method, params } = message ?? {}
   if (id === undefined) return null
   const reply = result => ({ jsonrpc: '2.0', id, result })
@@ -503,6 +516,7 @@ async function handleMcp(sessionId, message, ask, findTranscript) {
     const name = params?.name
     if (!TOOLS.some(t => t.name === name)) return reply(text(`No tool called ${name}.`, true))
     const args = { ...params?.arguments }
+    if (name === 'request_secret') return reply(text(await requestSecret(sessionId, args, ask, secrets, verified)))
     if (name === 'new_session' || (name === 'start_issue' && args.folder)) {
       // The window can't look at the disk, and a shell given a missing folder quietly starts in home.
       const folder = typeof args.folder === 'string' ? args.folder.trim().replace(/^~(?=\/|$)/, os.homedir()) : ''
@@ -517,6 +531,30 @@ async function handleMcp(sessionId, message, ask, findTranscript) {
     return reply(text(body, result.isError))
   }
   return { jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown method ${method}` } }
+}
+
+// Sessions with a picker open. Every outcome but a grant reads the same, so Claude learns nothing of the store.
+const asking = new Set()
+const DECLINED = 'The user declined.'
+async function requestSecret(sessionId, args, ask, secrets, verified) {
+  if (sessionId === TODAY) return 'request_secret needs a session; the Today page has none.'
+  // The hook token is in every shell, so without this one session could open the picker on another's pane.
+  if (!verified) return "request_secret can only be asked from the session's own Claude."
+  if (asking.has(sessionId)) return 'A request is already open in this session.'
+  asking.add(sessionId)
+  try {
+    const why = typeof args.why === 'string' ? args.why.trim().slice(0, 300) : ''
+    const { picked } = await ask(sessionId, 'request_secret', { why }).catch(() => ({}))
+    if (typeof picked !== 'string') return DECLINED
+    const file = secrets.grant(sessionId, picked)
+    // The data folder is under "Application Support", so the path needs quoting in a command.
+    const quoted = `'${file.replaceAll("'", "'\\''")}'`
+    return `Granted "${path.basename(file)}" for this session at ${file}. Use it as $(cat ${quoted}) inside a command. Never print it.`
+  } catch {
+    return DECLINED
+  } finally {
+    asking.delete(sessionId)
+  }
 }
 
 const text = (body, isError = false) => ({ content: [{ type: 'text', text: body }], isError })
@@ -562,7 +600,8 @@ async function digest(claudeSessionId, findTranscript) {
 }
 
 // How long main waits for the window to answer a call: wait_for answers when its turn ends.
-const answerWithin = (name, args) => name === 'wait_for'
+const answerWithin = (name, args) => name === 'request_secret' ? 310000
+  : name === 'wait_for'
   ? (Math.min(1800, Math.max(5, Number(args?.timeout_seconds) || 600)) + 20) * 1000
   // It may ask GitHub and Linear first.
   : name === 'get_status' ? 60000

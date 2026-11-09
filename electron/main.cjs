@@ -12,6 +12,7 @@ const { setupMenuBar, setMenuBarEnabled, menuBarEnabled, reloadMenuBarPanel } = 
 const { openDoor, openDemoBrowser, closeBrowser, closeAllBrowsers, closeAllLeftovers, watchBrowser, frameDrawn, browserStates, onBrowserViews, browserInput, setWindowed, signIn, finishSignIn, isSigningIn } = require('./browser.cjs')
 const { browserMcpInstalled, installBrowserMcp, uninstallBrowserMcp } = require('./mcp.cjs')
 const { answerWithin, handleMcp, writeMcpConfig, TODAY } = require('./tools.cjs')
+const { createSecrets } = require('./secrets.cjs')
 const { demoSite } = require('./demo-site.cjs')
 const editors = require('./editors.cjs')
 const { sizeLog, watchClaudeWidth } = require('./sizelog.cjs')
@@ -41,6 +42,9 @@ let win
 // processes from posting fake ones.
 const hookToken = crypto.randomUUID()
 let hookPort = 0
+// Each shell also gets a key of its own, so it can't call request_secret as another session (tools.cjs).
+const sessionSecret = crypto.randomBytes(32)
+const sessionKey = id => crypto.createHmac('sha256', sessionSecret).update(id).digest('hex')
 
 function send(channel, ...args) {
   if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send(channel, ...args)
@@ -71,6 +75,7 @@ ipcMain.handle('pty:start', (_e, { id, cwd, command, cols, rows }) => {
       DECKTERM_SESSION: id,
       DECKTERM_PORT: String(hookPort),
       DECKTERM_TOKEN: hookToken,
+      DECKTERM_SESSION_KEY: sessionKey(id),
       DECKTERM_MCP_CONFIG: MCP_CONFIG,
     },
   })
@@ -109,6 +114,23 @@ function shellEnv() {
 const MCP_CONFIG = path.join(app.getPath('userData'), 'own-term-mcp.json')
 writeMcpConfig(MCP_CONFIG)
 
+// Tokens for request_secret. A grant lives as long as its shell, and no shell outlives the app.
+const secrets = createSecrets({
+  dir: app.getPath('userData'),
+  seal: { available: () => safeStorage.isEncryptionAvailable(), encrypt: s => safeStorage.encryptString(s), decrypt: b => safeStorage.decryptString(b) },
+})
+ipcMain.handle('secrets:list', () => secrets.list())
+for (const action of ['add', 'replace', 'rename', 'remove', 'revoke']) {
+  ipcMain.handle(`secrets:${action}`, (_e, ...args) => {
+    try {
+      secrets[action](...args)
+      return {}
+    } catch (error) {
+      return { error: error.message }
+    }
+  })
+}
+
 // zsh reads these files itself, and can't from inside the app archive, so a packaged build copies
 // them out to its data folder at launch (Electron's fs reads the archive).
 const SHELL_DIR = app.isPackaged ? path.join(app.getPath('userData'), 'shell') : path.join(__dirname, 'shell')
@@ -146,6 +168,7 @@ ipcMain.handle('demo:browser', (_e, id) => demoSite().then(url => openDemoBrowse
 ipcMain.on('pty:kill', (_e, id) => {
   ptys.get(id)?.proc.kill()
   ptys.delete(id)
+  secrets.endSession(id)
   closeBrowser(id)
 })
 
@@ -318,10 +341,22 @@ function startHookServer() {
         } catch {
           return res.writeHead(400).end()
         }
+        // Claude Code drops a request with no response after 60 s; the picker waits on a person, so its
+        // answer comes as an event stream whose headers go out at once.
+        const streamed = message?.method === 'tools/call' && message.params?.name === 'request_secret'
+        let ping
+        if (streamed) {
+          res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' })
+          ping = setInterval(() => res.write(': waiting\n\n'), 20000)
+        }
         // Claude waits for every answer, so a tool that throws still gets one.
-        const answer = await handleMcp(mcp[1], message, askWindow, info.findTranscript).catch(error => ({
+        const answer = await handleMcp(mcp[1], message, askWindow, info.findTranscript, secrets, req.headers['x-deckterm-session-key'] === sessionKey(mcp[1])).catch(error => ({
           jsonrpc: '2.0', id: message?.id ?? null, error: { code: -32603, message: error.message },
         }))
+        if (streamed) {
+          clearInterval(ping)
+          return res.end(`event: message\ndata: ${JSON.stringify(answer)}\n\n`)
+        }
         if (!answer) return res.writeHead(202).end()
         res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(answer))
       })
@@ -922,6 +957,8 @@ function loadPage(target, query) {
 // save nothing, and running both on one profile risks damaging it. Opening the app again just brings
 // the window forward.
 if (!app.requestSingleInstanceLock()) app.exit(0)
+// After the lock: a second copy starting up mustn't wipe the grants of the one running.
+else secrets.clearGrants()
 app.on('second-instance', () => {
   if (win?.isMinimized()) win.restore()
   win?.show()
@@ -974,7 +1011,7 @@ app.on('will-quit', event => {
     closeAllBrowsers().then(() => app.quit())
     return
   }
-  if (shellsStopped || ptys.size === 0) return
+  if (shellsStopped || ptys.size === 0) return secrets.clearGrants()
   event.preventDefault()
   stopShells().then(() => app.quit())
 })

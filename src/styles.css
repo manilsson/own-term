@@ -3045,6 +3045,66 @@ body.dragging {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
+/* Claude's request for a token, over its own pane rather than the whole window. */
+.secret-picker-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 16px 16px;
+  background: color-mix(in srgb, var(--content) 55%, transparent);
+}
+
+.secret-picker {
+  width: min(440px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 20px 22px 22px;
+  border-radius: 14px;
+  background: var(--raised);
+  border: 0.5px solid var(--strong-edge);
+  box-shadow: 0 24px 60px var(--popover-shadow);
+  outline: none;
+  animation: sheet-in 0.18s ease-out;
+}
+
+.secret-picker h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.secret-picker .text-field {
+  flex: none;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.secret-picker .text-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.secret-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.secret-list .when-option {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
 /* Cancel Reminder sits apart from the buttons that close the sheet, as a destructive choice does on macOS. */
 .sheet-buttons .sheet-button-start {
   margin-right: auto;
@@ -5939,6 +5999,49 @@ body.dragging {
 
 .settings-sheet {
   outline: none;
+}
+
+.secrets-note {
+  display: block;
+  margin: -6px 0 12px;
+}
+
+.secret-row {
+  padding: 8px 0;
+  border-top: 0.5px solid var(--separator);
+}
+
+.secret-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--secondary);
+}
+
+.secret-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--label);
+  font: 12px "SF Mono", Menlo, monospace;
+}
+
+.secret-detail {
+  display: block;
+  margin: 2px 0 0 21px;
+}
+
+.secret-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.secret-form .text-field {
+  height: 28px;
+}
+
+.secret-actions {
+  margin-top: 8px;
 }
 
 .settings-sheet .form-row > span {

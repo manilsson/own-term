@@ -27,6 +27,7 @@ through `window.deck`, which `electron/preload.cjs` exposes and `src/global.d.ts
 | `electron/mcp.cjs` | Wraps the user's chrome-devtools MCP server so that in an Own Term session it drives that session's Chrome |
 | `electron/monitors.cjs` | Monitors: their specs and history on disk, checking a spec, running its commands on schedule in the login shell's environment, the rules and their notifications (see "Monitors") |
 | `electron/tools.cjs` | Own Term's own MCP server (`own-term`), served at `/mcp/<session>` on the hook server and passed to `claude` only in Own Term's zsh; its tools are answered in the window by `src/tools.ts` |
+| `electron/secrets.cjs` | The tokens Claude can be given: sealed with the keychain in `secrets.json`, decrypted only into a session's grant folder (see "Tokens for Claude") |
 | `electron/menubar.cjs` | The menu bar icon (its cursor blinks while Claude works; a count of sessions needing you) and its panel window (see "Menu bar") |
 | `electron/updater.cjs` | Updates a packaged app from the release folder (`releasing.md`) |
 | `forge.config.cjs` | Packaging and signing (`releasing.md`) |
@@ -37,6 +38,7 @@ through `window.deck`, which `electron/preload.cjs` exposes and `src/global.d.ts
 | `src/grouping.ts` | Lets Claude put a new session in a group after its first prompt |
 | `src/reminders.ts`, `ReminderSheet.tsx`, `RemindersPage.tsx` | Remind Me: a time and note on a session, the Reminders page the sidebar's tile opens, and moving it to Needs You when due |
 | `src/tools.ts` | What Claude's `own-term` tools do: list and describe sessions, organize sessions and groups, reminders, starting sessions; each change gets a notice with Undo |
+| `src/secrets.ts`, `SecretPicker.tsx`, `SecretsSettings.tsx` | Claude's open token requests, the picker on its pane, and Settings → Tokens for Claude |
 | `src/status.ts`, `StatusPage.tsx`, `SettingsSheet.tsx`, `notes.ts` | The Today page (⌃⌘T): its data and actions, the page, Settings (⌘,), and the to-dos |
 | `src/projects.ts` | Projects: which project each session, group, pull request, issue, to-do and prompt is in, the one the sidebar and the Today page show, and how each looks on the rail (see "Today page") |
 | `src/ProjectRail.tsx` | The project rail beside the sidebar (a tile per project, its needs-you badge and working spinner), the sidebar's project title and a project's Color and Icon menu |
@@ -432,6 +434,7 @@ The sidebar's state lives in the window, so main asks it (`tools:call`, answered
 | `review_pr`, `start_issue` | What the Today page's Review with Claude and Start do, through the same functions (`reviewWithClaude`, `startIssueIn` in `status.ts`); an issue starts in the folder given or where its team last started |
 | `send_prompt`, `wait_for` | Type a prompt into Claude in another session and send it; wait for that session's turn to end and get its reply |
 | `add_note`, `list_notes`, `complete_note`, `remove_note` | The Today page's to-dos; a note is tied to the calling session unless told otherwise, can name a Linear issue, and with a time is a reminder (`remind` and `cancel_reminder` take `todo` to change it) |
+| `request_secret` | Opens a picker on the caller's pane; the user picks a token or declines. Replies with a grant file's path, never a value (see "Tokens for Claude") |
 | `get_status` | What the Today page knows: the brief, sessions needing the user, reminders, pull requests, issues and to-dos |
 | `list_projects`, `set_projects`, `update_project` | The projects, each with its repositories, where its name comes from, and its color, icon and whether it has a favicon; name repositories (alike names merge them, null resets) or set a project's color, icon and place on the rail, each undone as one. `create_group` and `new_session` take a `project` |
 | `save_monitor`, `list_monitors`, `get_monitor`, `pause_monitor`, `remove_monitor`, `move_monitor` | Monitors (see "Monitors"); `save_monitor` and `move_monitor` put one in a group; `get_monitor` with `run: true` runs the allowed commands first, and lists problems such as a panel naming a field the rows don't have |
@@ -447,6 +450,30 @@ The instructions tell Claude to use the tools only when asked.
 The Today page's chat calls in as `today`, which is no session: the hook server lets that caller through,
 the server gives it instructions of its own, and a tool that would default to the caller asks it to
 name a session instead (`add_note` ties the to-do to none).
+
+## Tokens for Claude
+
+Claude asks for a token with `request_secret`, which takes only `why`: it can't name, list or fetch
+one. `tools.cjs` handles the call in main and asks the window for a name. `src/secrets.ts` shows
+`SecretPicker` on the caller's pane and marks the session as needing input until the user answers.
+Main then decrypts that token into `<userData>/session-secrets/<session>/<name>` (folder 0700, file
+0600, no newline) and replies with the path, quoted for `$(cat …)`. A decline, a timeout (300 s),
+an error and closing the session all reply `The user declined.`, and a second request while one is
+open is refused.
+
+- **Only the session's own Claude** can ask: each shell gets `DECKTERM_SESSION_KEY`, an HMAC of its
+  id under a secret only main holds, which the MCP config sends and `request_secret` requires. The
+  hook token alone, which every shell has, would let one session open the picker on another's pane.
+- **The answer streams**: Claude Code drops an MCP request that has no response after 60 s, so main
+  answers `request_secret` as an event stream, headers at once and a comment every 20 s.
+- **The store** (`secrets.cjs`, `secrets.json`): each token sealed with `safeStorage`. Values reach
+  main from the picker's Paste New and from Settings, and never go back to the window or to Claude.
+  Without the keychain it refuses to save.
+- **Grants** last the session: deleted when it ends (`pty:kill`), revoked or deleted in Settings,
+  rewritten when the token is replaced, and all wiped at launch and quit.
+- **The limit**: a command that prints a granted token puts it in Claude's transcript. Hooks can't
+  change Bash output, so the tool's description tells Claude never to print it.
+- Tests: `node --test electron/*.test.cjs`.
 
 ## Today page
 

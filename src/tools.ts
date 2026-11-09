@@ -12,6 +12,7 @@ import { githubOk, isDemo, knownFolders, lastIssueFolder, linearOk, reviewWithCl
 import { currentLooks, currentProjects, knownRepos, monitorProject, placeProject, resolveProjects } from './projects'
 import { addToView, closePage, groupRemoved, openSession, refreshGroupView, refreshView, renamePane, show } from './workspace'
 import { monitorList, refreshMonitors, removeMonitor, setPaused } from './monitors'
+import { requestSecret } from './secrets'
 
 // What Claude in a session asks of Own Term through its MCP server (electron/tools.cjs), done with the
 // same functions the sidebar uses. Every change is announced, with Undo where it can be undone, since
@@ -942,6 +943,8 @@ async function run(caller: string, tool: string, args: Record<string, unknown>):
 }
 
 window.deck.onToolCall(async (requestId, caller, tool, args) => {
+  // Answered with a name only: main grants it and replies to Claude (electron/tools.cjs).
+  if (tool === 'request_secret') return window.deck.toolResult(requestId, await requestSecret(caller, String(args?.why ?? '')))
   let result: ToolResult
   try {
     result = await run(caller, tool, args ?? {})
