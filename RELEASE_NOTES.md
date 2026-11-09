@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.69
+
+2026-11-09
+
+- Make Settings a page, with the app menu's choices on it
+- Let Claude ask for a token instead of reading it from a file
+
 ## 0.1.68
 
 2026-11-04
