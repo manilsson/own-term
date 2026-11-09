@@ -20,7 +20,6 @@ export function SecretsSettings() {
 
   return (
     <div className="settings-section">
-      <h3>Tokens for Claude</h3>
       <p className="field-note secrets-note">
         Claude can ask for one with request_secret; you pick which, and it gets a file to read it from for that session. Encrypted with your Mac’s keychain and never shown here.
       </p>

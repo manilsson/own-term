@@ -3,11 +3,11 @@ import { KeyRound } from 'lucide-react'
 import { answerSecret } from './secrets'
 import { useStore } from './store'
 
-// A Return meant for whatever had focus a moment ago mustn't hand over a token.
-const SETTLE_MS = 600
-
 // Claude asked for a token (request_secret): the user picks which, or pastes a new one. Values only
 // ever go to main; the window lists names.
+
+// A Return meant for whatever had focus a moment ago mustn't hand over a token.
+const SETTLE_MS = 600
 
 export function SecretPicker({ id, why }: { id: string; why: string }) {
   const [tokens, setTokens] = useState<SecretEntry[] | null>(null)

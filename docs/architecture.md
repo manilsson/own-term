@@ -39,7 +39,8 @@ through `window.deck`, which `electron/preload.cjs` exposes and `src/global.d.ts
 | `src/reminders.ts`, `ReminderSheet.tsx`, `RemindersPage.tsx` | Remind Me: a time and note on a session, the Reminders page the sidebar's tile opens, and moving it to Needs You when due |
 | `src/tools.ts` | What Claude's `own-term` tools do: list and describe sessions, organize sessions and groups, reminders, starting sessions; each change gets a notice with Undo |
 | `src/secrets.ts`, `SecretPicker.tsx`, `SecretsSettings.tsx` | Claude's open token requests, the picker on its pane, and Settings → Tokens for Claude |
-| `src/status.ts`, `StatusPage.tsx`, `SettingsSheet.tsx`, `notes.ts` | The Today page (⌃⌘T): its data and actions, the page, Settings (⌘,), and the to-dos |
+| `src/status.ts`, `StatusPage.tsx`, `notes.ts` | The Today page (⌃⌘T): its data and actions, the page, and the to-dos |
+| `src/SettingsPage.tsx` | Settings (⌘,), a page like Today's: the app menu's choices (appearance, theme, editor, menu bar, session browsers), Own Term's hooks, what the Today page connects to, and the tokens for Claude. Main sends `preferences` whenever it rebuilds the menu, so the page and the menu agree |
 | `src/projects.ts` | Projects: which project each session, group, pull request, issue, to-do and prompt is in, the one the sidebar and the Today page show, and how each looks on the rail (see "Today page") |
 | `src/ProjectRail.tsx` | The project rail beside the sidebar (a tile per project, its needs-you badge and working spinner), the sidebar's project title and a project's Color and Icon menu |
 | `src/IconPicker.tsx` | A searchable grid of the session icons, for a project's or a saved prompt's icon |

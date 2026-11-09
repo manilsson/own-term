@@ -48,7 +48,7 @@ export interface Session {
   project?: string
 }
 
-export type Page = 'status' | 'reminders' | { monitor: string } | null
+export type Page = 'status' | 'reminders' | 'settings' | { monitor: string } | null
 
 /** What fills the workspace: one session, a group's saved layout, or a ⌘-click pick across groups.
     A pick's ids are pane ids: a session's id, or a monitor's as `monitorPane` makes it. */

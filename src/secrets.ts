@@ -8,13 +8,15 @@ import { focus } from './terminals'
 
 const WAIT_MS = 300_000
 
-type Request = { why: string; answer: (picked?: string) => void }
+type Request = { id: number; why: string; answer: (picked?: string) => void }
+let requestCount = 0
 const requests = new Map<string, Request>()
 const listeners = new Set<() => void>()
 const changed = () => listeners.forEach(l => l())
 
 export function requestSecret(sessionId: string, why: string): Promise<{ picked?: string }> {
   return new Promise(resolve => {
+    if (!getState().sessions.some(s => s.id === sessionId)) return resolve({})
     const done = (picked?: string) => {
       if (requests.get(sessionId) !== request) return
       const typing = !!document.activeElement?.closest('.secret-picker')
@@ -30,7 +32,7 @@ export function requestSecret(sessionId: string, why: string): Promise<{ picked?
       resolve(picked ? { picked } : {})
     }
     const asking = why ? `Claude asks for a token: ${why}` : 'Claude asks for a token'
-    const request: Request = { why, answer: done }
+    const request: Request = { id: ++requestCount, why, answer: done }
     const timer = setTimeout(() => done(), WAIT_MS)
     const unsubscribe = subscribe(() => getState().sessions.some(s => s.id === sessionId) || done())
     requests.set(sessionId, request)
@@ -43,7 +45,7 @@ export function answerSecret(sessionId: string, picked?: string) {
   requests.get(sessionId)?.answer(picked)
 }
 
-export function useSecretRequest(sessionId: string): { why: string } | undefined {
+export function useSecretRequest(sessionId: string): { id: number; why: string } | undefined {
   return useSyncExternalStore(
     listener => (listeners.add(listener), () => listeners.delete(listener)),
     () => requests.get(sessionId),

@@ -2969,7 +2969,8 @@ body.dragging {
   color: var(--secondary);
 }
 
-.sheet .text-field {
+.sheet .text-field,
+.settings-page .text-field {
   flex: none;
   height: 34px;
   padding: 0 11px;
@@ -2978,7 +2979,8 @@ body.dragging {
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-.sheet .note-field {
+.sheet .note-field,
+.settings-page .note-field {
   height: auto;
   min-height: 34px;
   max-height: 140px;
@@ -2988,7 +2990,8 @@ body.dragging {
   field-sizing: content;
 }
 
-.sheet .text-field:focus {
+.sheet .text-field:focus,
+.settings-page .text-field:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
@@ -3373,7 +3376,8 @@ body.dragging {
 }
 
 /* In a sheet the buttons sit on a lighter surface, so they're quieter and roomier than in the window. */
-.sheet .push-button {
+.sheet .push-button,
+.settings-page .push-button {
   height: 30px;
   padding: 0 16px;
   border-radius: 8px;
@@ -3382,16 +3386,19 @@ body.dragging {
   transition: background 0.12s ease, filter 0.12s ease;
 }
 
-.sheet .push-button:hover:not(:disabled) {
+.sheet .push-button:hover:not(:disabled),
+.settings-page .push-button:hover:not(:disabled) {
   background: color-mix(in srgb, var(--label) 8%, var(--field));
 }
 
-.sheet .push-button.default {
+.sheet .push-button.default,
+.settings-page .push-button.default {
   background: var(--accent);
   box-shadow: none;
 }
 
-.sheet .push-button.default:hover:not(:disabled) {
+.sheet .push-button.default:hover:not(:disabled),
+.settings-page .push-button.default:hover:not(:disabled) {
   background: var(--accent);
   filter: brightness(1.08);
 }
@@ -5975,10 +5982,100 @@ body.dragging {
   color: var(--on-accent);
 }
 
-/* Settings */
+/* Settings: a page like Today's, its sections listed down the left as System Settings does. */
 
-.settings-sheet {
-  width: 560px;
+.settings-inner {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 700px);
+  justify-content: center;
+  align-items: start;
+  gap: 32px;
+}
+
+.settings-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav h1 {
+  margin: 0 0 18px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--label);
+  font-size: 13px;
+  text-align: left;
+}
+
+.settings-nav-item .status-card-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.settings-nav-item:hover {
+  background: var(--fill);
+}
+
+.settings-nav-item.on {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.settings-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 52px;
+}
+
+.settings-card-body {
+  padding: 0 8px 8px;
+}
+
+.settings-card-body > .form-box:first-child {
+  margin-top: 4px;
+}
+
+.form-row.stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+/* Narrow: the list wraps into a row of tabs above the card. */
+@container (max-width: 760px) {
+  .settings-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .settings-nav h1 {
+    flex-basis: 100%;
+  }
+
+  .settings-cards {
+    padding-top: 0;
+  }
 }
 
 .settings-section + .settings-section {
@@ -5995,10 +6092,6 @@ body.dragging {
 
 .settings-section h3 + .field {
   margin-top: 0;
-}
-
-.settings-sheet {
-  outline: none;
 }
 
 .secrets-note {
@@ -6044,11 +6137,11 @@ body.dragging {
   margin-top: 8px;
 }
 
-.settings-sheet .form-row > span {
+.settings-page .form-row > span {
   flex-shrink: 1;
 }
 
-.settings-sheet .project-name {
+.settings-page .project-name {
   width: 180px;
 }
 
@@ -6121,7 +6214,8 @@ body.dragging {
   min-width: 0;
 }
 
-.sheet .key-field .push-button {
+.sheet .key-field .push-button,
+.settings-page .key-field .push-button {
   height: 34px;
 }
 
@@ -6136,7 +6230,8 @@ body.dragging {
   font-size: inherit;
 }
 
-.sheet .text-area {
+.sheet .text-area,
+.settings-page .text-area {
   height: auto;
   padding: 8px 11px;
   color: var(--label);

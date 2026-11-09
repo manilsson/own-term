@@ -37,7 +37,7 @@ import { StatusPage } from './StatusPage'
 import { MonitorPage } from './MonitorPage'
 import { RemindersPage } from './RemindersPage'
 import { monitorMenu, useMonitors } from './monitors'
-import { SettingsSheet } from './SettingsSheet'
+import { openSettings, SettingsPage } from './SettingsPage'
 import { PromptBar } from './PromptBar'
 import { showStatus, write } from './status'
 import { setTheme, THEMES } from './themes'
@@ -85,7 +85,7 @@ function TerminalPane({ params, api }: IDockviewPanelProps<{ sessionId: string }
       <div className="pane" ref={ref} />
       {browser && !browser.windowed && !isBlank(browser) && <FloatingBrowser id={params.sessionId} />}
       {finding && <FindBar id={params.sessionId} />}
-      {secretRequest && <SecretPicker id={params.sessionId} why={secretRequest.why} />}
+      {secretRequest && <SecretPicker key={secretRequest.id} id={params.sessionId} why={secretRequest.why} />}
     </div>
   )
 }
@@ -278,6 +278,7 @@ function Breadcrumb() {
   const name = session?.name ?? monitor?.name
   if (page === 'status') return <div className="breadcrumb"><span className="crumb current">Today</span></div>
   if (page === 'reminders') return <div className="breadcrumb"><span className="crumb current">Reminders</span></div>
+  if (page === 'settings') return <div className="breadcrumb"><span className="crumb current">Settings</span></div>
   if (page) {
     return (
       <div className="breadcrumb">
@@ -454,7 +455,6 @@ export function App() {
   const [info, setInfo] = useState(loadInfo)
   const infoOpen = info.open
   const [palette, setPalette] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState<false | 'top' | 'projects'>(false)
   const page = useStore(s => s.page)
   useRememberProjects()
   const railShown = useRailShown()
@@ -544,7 +544,7 @@ export function App() {
       showStatus()
       write('standup')
     }
-    if (action === 'settings') setSettingsOpen('top')
+    if (action === 'settings') openSettings()
     if (action === 'undo-last') undoLast()
     if (action === 'reopen-closed') reopenClosed()
     if (action === 'undo') {
@@ -639,8 +639,8 @@ export function App() {
       </header>
       <div className="app-body">
         <div className="sidebar-slot" style={{ width: sidebar.hidden ? 0 : sidebar.width + 12 + (railShown ? RAIL_WIDTH : 0) }} inert={sidebar.hidden}>
-          <ProjectRail onNameProjects={() => setSettingsOpen('projects')} />
-          <Sidebar width={sidebar.width} onNewSession={groupId => setCreating({ groupId })} onNameProjects={() => setSettingsOpen('projects')} />
+          <ProjectRail onNameProjects={() => openSettings('projects')} />
+          <Sidebar width={sidebar.width} onNewSession={groupId => setCreating({ groupId })} onNameProjects={() => openSettings('projects')} />
           <div className="sidebar-resizer" onPointerDown={startResize} />
         </div>
         <main className="workspace">
@@ -662,8 +662,9 @@ export function App() {
               scrollbars="native"
               onReady={e => initWorkspace(e.api)}
             />
-            {page === 'status' && <StatusPage onSettings={() => setSettingsOpen('top')} tabs={!railShown || sidebar.hidden} />}
+            {page === 'status' && <StatusPage onSettings={() => openSettings('today')} tabs={!railShown || sidebar.hidden} />}
             {page === 'reminders' && <RemindersPage />}
+            {page === 'settings' && <SettingsPage />}
             {typeof page === 'object' && page && <MonitorPage key={page.monitor} id={page.monitor} />}
           </div>
           <Footer />
@@ -679,7 +680,6 @@ export function App() {
       <Launch />
       {palette && <Palette actions={paletteActions} onClose={() => setPalette(false)} />}
       {reminding && <ReminderSheet key={reminding} />}
-      {settingsOpen && <SettingsSheet section={settingsOpen} onDone={() => setSettingsOpen(false)} />}
       {creating && <NewSessionSheet groupId={creating.groupId} cwd={creating.cwd} onDone={() => setCreating(null)} />}
     </div>
   )

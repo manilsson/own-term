@@ -343,11 +343,12 @@ function startHookServer() {
         }
         // Claude Code drops a request with no response after 60 s; the picker waits on a person, so its
         // answer comes as an event stream whose headers go out at once.
-        const streamed = message?.method === 'tools/call' && message.params?.name === 'request_secret'
+        const streamed = message?.id !== undefined && message.method === 'tools/call' && message.params?.name === 'request_secret'
         let ping
         if (streamed) {
           res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' })
           ping = setInterval(() => res.write(': waiting\n\n'), 20000)
+          res.on('close', () => clearInterval(ping))
         }
         // Claude waits for every answer, so a tool that throws still gets one.
         const answer = await handleMcp(mcp[1], message, askWindow, info.findTranscript, secrets, req.headers['x-deckterm-session-key'] === sessionKey(mcp[1])).catch(error => ({
@@ -717,6 +718,15 @@ function setAppearance(appearance) {
 
 ipcMain.on('app:appearance', (_e, appearance) => setAppearance(appearance))
 
+// The Settings page shows what the app menu holds; buildMenu tells it after every change.
+const preferences = () => ({ appearance: nativeTheme.themeSource, menuBar: menuBarEnabled(), sessionBrowsers: browserMcpInstalled() })
+ipcMain.on('app:preferences', e => (e.returnValue = preferences()))
+ipcMain.on('app:set-menu-bar', (_e, on) => {
+  setMenuBarEnabled(!!on)
+  buildMenu()
+})
+ipcMain.handle('app:set-session-browsers', (_e, on) => setSessionBrowsers(!!on))
+
 // The themes live in the renderer, which sends their names for View → Theme and the chosen one's
 // window colors, painted before the page loads.
 let themeNames = []
@@ -752,6 +762,7 @@ async function setSessionBrowsers(on) {
 }
 
 function buildMenu() {
+  send('preferences', preferences())
   const menu = (action, ...args) => () => send('menu', action, ...args)
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     {
@@ -859,7 +870,15 @@ function buildMenu() {
             click: menu(`theme:${id}`),
           })),
         },
-        { label: 'Show in Menu Bar', type: 'checkbox', checked: menuBarEnabled(), click: item => setMenuBarEnabled(item.checked) },
+        {
+          label: 'Show in Menu Bar',
+          type: 'checkbox',
+          checked: menuBarEnabled(),
+          click: item => {
+            setMenuBarEnabled(item.checked)
+            buildMenu()
+          },
+        },
         { type: 'separator' },
         { role: 'reload' },
         { role: 'toggleDevTools' },

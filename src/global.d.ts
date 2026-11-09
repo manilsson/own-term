@@ -134,7 +134,14 @@ interface HookEvent {
     | { kind: 'shells'; running: string[] }
 }
 
-/** What a tool call answers. `transcript` asks main to add that Claude conversation's latest prompts. */
+/** What the app menu holds, for the Settings page. */
+interface Preferences {
+  appearance: 'system' | 'light' | 'dark'
+  menuBar: boolean
+  /** Each session gets its own Chrome (electron/mcp.cjs). */
+  sessionBrowsers: boolean
+}
+
 /** A token Claude can be given (electron/secrets.cjs): never its value. */
 interface SecretEntry {
   name: string
@@ -144,6 +151,7 @@ interface SecretEntry {
   holders: string[]
 }
 
+/** What a tool call answers. `transcript` asks main to add that Claude conversation's latest prompts. */
 interface ToolResult {
   text: string
   isError?: boolean
@@ -526,6 +534,11 @@ interface Window {
     installHooks(): Promise<string | null>
     suggestGroup(text: string): Promise<{ group?: string; newGroup?: string; with?: string[]; none?: boolean } | null>
     setAppearance(appearance: 'system' | 'light' | 'dark'): void
+    /** What the app menu holds, for the Settings page. */
+    preferences(): Preferences
+    onPreferences(callback: (preferences: Preferences) => void): Unsubscribe
+    setMenuBar(on: boolean): void
+    setSessionBrowsers(on: boolean): Promise<void>
     /** The id of the theme picked last, kept by the main process. */
     theme(): string
     setTheme(theme: { id: string; names: { id: string; name: string }[]; windowColors: { dark: string; light: string } }): void

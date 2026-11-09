@@ -496,8 +496,10 @@ function writeMcpConfig(file) {
   fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n')
 }
 
-/** Answers one JSON-RPC message from Claude Code; `ask` runs a tool in the window. */
-/** `verified`: the caller sent its session's own key, so it is that session and not another shell. */
+/**
+ * Answers one JSON-RPC message from Claude Code; `ask` runs a tool in the window. `verified`: the
+ * caller sent its session's own key, so it is that session and not another shell.
+ */
 async function handleMcp(sessionId, message, ask, findTranscript, secrets, verified = false) {
   const { id, method, params } = message ?? {}
   if (id === undefined) return null
