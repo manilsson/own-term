@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.71
+
+2026-11-09
+
+- Follow Claude into a worktree, and show only the session's own
+
 ## 0.1.70
 
 2026-11-09
