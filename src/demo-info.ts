@@ -226,13 +226,6 @@ const DEMOS: Record<string, Demo> = {
   },
 }
 
-const WORKTREES: GitDetails['worktrees'] = [
-  { path: juniper, branch: 'main', current: false },
-  { path: tree('apple-pay'), branch: 'feat/apple-pay', current: false },
-  { path: tree('checkout-load'), branch: 'perf/checkout-load', current: false },
-  { path: tree('idempotent-retry'), branch: 'fix/idempotent-retry', current: false },
-]
-
 const SKILLS = ['frontend-design', 'testing', 'db-migrations', 'release-notes', 'code-review', 'security-review', 'pdf', 'xlsx', 'screenshot']
 
 /** A context curve from `from` to `to`, rising with small wobbles, dropping where it compacted. */
@@ -285,7 +278,6 @@ export function demoInfo(key: string): PanelData | null {
       pushed: !!demo.upstream && i >= ahead,
     })),
     stashes: key === 'triage' ? 1 : 0,
-    worktrees: demo.root === juniper || demo.root.startsWith(`${juniper}/`) ? WORKTREES.map(w => ({ ...w, current: w.path === demo.root })) : [{ path: demo.root, branch: demo.branch, current: true }],
   }
   const c = demo.claude
   const claude: ClaudeInfo | null = c

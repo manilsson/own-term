@@ -1730,9 +1730,14 @@ body.resizing .info-slot,
   background: color-mix(in srgb, var(--green) 24%, transparent);
 }
 
-.info-pr-icon {
+.info-pr-icon,
+.info-worktree-icon {
   flex-shrink: 0;
   color: var(--secondary);
+}
+
+.info-worktree {
+  margin-top: 4px;
 }
 
 .command-dot {

@@ -1,6 +1,6 @@
 import {
   addGroup, announce, getState, GROUP_COLORS, groupColor, moveSession, rememberClosed, removeGroup, removeSession, setState, toggleAllGroups, updateGroup, updateSession, viewIds,
-  type Group, type Session,
+  type Group, type Session, workFolder,
 } from './store'
 import { kill } from './terminals'
 import { editorState } from './editor'
@@ -126,9 +126,10 @@ export async function sessionMenu(session: Session, inPane = false) {
   if (choice === 'beside') showBeside(session.id)
   if (choice === 'rename') renameSession(session.id)
   if (choice === 'remove-icon') updateSession(session.id, { icon: undefined })
-  if (choice === 'reveal') window.deck.revealFile(session.cwd)
-  if (choice === 'editor') window.deck.openFile(session.cwd)
-  if (choice === 'copy-path') navigator.clipboard.writeText(session.cwd)
+  const folder = workFolder(getState(), session)
+  if (choice === 'reveal') window.deck.revealFile(folder)
+  if (choice === 'editor') window.deck.openFile(folder)
+  if (choice === 'copy-path') navigator.clipboard.writeText(folder)
   if (choice === 'end') endSession(session)
   applyReminder(session, choice)
   applyTokenChoice(session.id, choice)

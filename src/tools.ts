@@ -1,6 +1,6 @@
 import {
   addGroup, announce, getState, GROUP_COLORS, monitorPane, moveMonitor, moveSession, newId, newProject, paneGroup, viewIds, orderedSessions, rememberFolder, removeGroup, setState, subscribe, updateGroup, updateSession,
-  type Group, type Note, type Session, type SessionState, type Snippet, type State,
+  type Group, type Note, type Session, type SessionState, type Snippet, type State, workFolder,
 } from './store'
 import { cancelNoteReminder, cancelReminder, finishReminder, formatDue, setNoteReminder, setReminder } from './reminders'
 import { SESSION_ICONS } from './sessionIcons'
@@ -178,7 +178,7 @@ function listSessions(caller: string): ToolResult {
     group: s.groups.find(g => g.id === x.groupId)?.name ?? null,
     project: projects.session(x.id) ?? null,
     status: STATUS[s.status[x.id] ?? 'idle'],
-    folder: tilde(x.cwd),
+    folder: tilde(workFolder(s, x)),
     branch: s.git[x.id]?.branch ?? undefined,
     icon: x.icon,
     claude: !!x.claudeSessionId || undefined,
@@ -194,7 +194,7 @@ function describeSession(session: Session): ToolResult {
   const group = s.groups.find(g => g.id === session.groupId)?.name
   const lines = [
     `“${session.name}” (${session.id})${group ? ` in ${group}` : ', in no group'}`,
-    `Folder: ${tilde(session.cwd)}${s.git[session.id]?.branch ? `, branch ${s.git[session.id]!.branch}` : ''}`,
+    `Folder: ${tilde(workFolder(s, session))}${s.git[session.id]?.branch ? `, branch ${s.git[session.id]!.branch}` : ''}`,
     `Status: ${STATUS[s.status[session.id] ?? 'idle']}`,
   ]
   if (!session.claudeSessionId) return { text: [...lines, 'No Claude conversation in it.'].join('\n') }

@@ -1,4 +1,4 @@
-import { getState, setState } from './store'
+import { getState, setState, workFolder } from './store'
 
 // One request per folder at a time: sessions in the same folder share it, and a slow repo's poll
 // doesn't pile up behind itself.
@@ -20,7 +20,8 @@ export async function refreshGit(id?: string) {
   const sessions = getState().sessions.filter(s => !s.demo && (!id || s.id === id))
   const number = ++requests
   // A refresh for one session follows something it just did, so it asks git again rather than sharing.
-  const results = await Promise.all(sessions.map(s => info(s.cwd, !!id)))
+  const folders = getState()
+  const results = await Promise.all(sessions.map(s => info(workFolder(folders, s), !!id)))
   const current = getState().git
   const changed = sessions.filter((s, i) => (applied[s.id] ?? 0) < number && JSON.stringify(current[s.id]) !== JSON.stringify(results[i]))
   for (const s of sessions) applied[s.id] = Math.max(applied[s.id] ?? 0, number)

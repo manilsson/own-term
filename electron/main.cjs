@@ -13,6 +13,7 @@ const { openDoor, openDemoBrowser, closeBrowser, closeAllBrowsers, closeAllLefto
 const { browserMcpInstalled, installBrowserMcp, uninstallBrowserMcp } = require('./mcp.cjs')
 const { answerWithin, handleMcp, writeMcpConfig, TODAY } = require('./tools.cjs')
 const { createSecrets } = require('./secrets.cjs')
+const { claudeFolder } = require('./hook-cwd.cjs')
 const { demoSite } = require('./demo-site.cjs')
 const editors = require('./editors.cjs')
 const { sizeLog, watchClaudeWidth } = require('./sizelog.cjs')
@@ -199,6 +200,7 @@ function hookEvent(e) {
     // For wait_for (tools.cjs): the whole reply, where summary is its first lines.
     reply: e.hook_event_name === 'Stop' && typeof e.last_assistant_message === 'string' ? e.last_assistant_message.slice(0, 8000) : undefined,
     command: commandEvent(e),
+    cwd: claudeFolder(e),
   }
 }
 

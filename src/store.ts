@@ -148,6 +148,8 @@ export interface State extends Saved {
   needsSince: Record<string, number>
   /** What Claude is doing, asking or said last in each session, and when its turn started; for the menu bar. */
   activity: Record<string, { text?: string; since?: number }>
+  /** Where Claude works in a session, while that isn't the shell's folder (it switched into a worktree). */
+  claudeFolders: Record<string, string>
   /** In-app notifications, newest first. */
   toasts: Toast[]
   active: string | null
@@ -204,10 +206,10 @@ const RUNTIME_KEY = 'deckterm.runtime'
 const WAITING_KEY = 'deckterm.waiting'
 const LASTS = ['done', 'reminder']
 
-type Runtime = Pick<State, 'status' | 'needsSince' | 'activity'>
+type Runtime = Pick<State, 'status' | 'needsSince' | 'activity' | 'claudeFolders'>
 
 function loadRuntime(): Runtime {
-  const empty: Runtime = { status: {}, needsSince: {}, activity: {} }
+  const empty: Runtime = { status: {}, needsSince: {}, activity: {}, claudeFolders: {} }
   try {
     const reload = sessionStorage.getItem(RUNTIME_KEY)
     if (reload) return { ...empty, ...JSON.parse(reload) }
@@ -331,9 +333,9 @@ export function setState(update: (s: State) => Partial<State>) {
   ) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ groups, sessions, lastCwd, view, autoGroup }))
   }
-  if (state.status !== before.status || state.needsSince !== before.needsSince || state.activity !== before.activity) {
-    const { status, needsSince, activity } = state
-    sessionStorage.setItem(RUNTIME_KEY, JSON.stringify({ status, needsSince, activity }))
+  if (state.status !== before.status || state.needsSince !== before.needsSince || state.activity !== before.activity || state.claudeFolders !== before.claudeFolders) {
+    const { status, needsSince, activity, claudeFolders } = state
+    sessionStorage.setItem(RUNTIME_KEY, JSON.stringify({ status, needsSince, activity, claudeFolders }))
     saveWaiting(state)
   }
   if (state.closed !== before.closed) localStorage.setItem(CLOSED_KEY, JSON.stringify(state.closed))
@@ -421,6 +423,24 @@ export function setStatus(id: string, status: SessionState) {
   })
 }
 
+/**
+ * The folder a session works in: Claude's, while it works somewhere other than the shell, else the
+ * shell's. For what the session is working on (git, its info, paths it prints); a shell starts in `cwd`.
+ */
+export const workFolder = (s: Pick<State, 'claudeFolders'>, session: Pick<Session, 'id' | 'cwd'>) => s.claudeFolders[session.id] ?? session.cwd
+
+/** Claude works in `folder`; undefined, or the shell's own folder, means it's back with the shell. */
+export function setClaudeFolder(id: string, folder: string | undefined) {
+  const session = state.sessions.find(s => s.id === id)
+  const next = folder && folder !== session?.cwd ? folder : undefined
+  if (state.claudeFolders[id] === next) return false
+  setState(s => {
+    const { [id]: _, ...rest } = s.claudeFolders
+    return { claudeFolders: next ? { ...rest, [id]: next } : rest }
+  })
+  return true
+}
+
 export function setActivity(id: string, patch: { text?: string; since?: number }) {
   setState(s => ({ activity: { ...s.activity, [id]: { ...s.activity[id], ...patch } } }))
 }
@@ -505,6 +525,7 @@ export function removeSession(id: string) {
       titles: without(s.titles),
       needsSince: without(s.needsSince),
       activity: without(s.activity),
+      claudeFolders: without(s.claudeFolders),
       toasts: s.toasts.filter(t => t.sessionId !== id),
       active: s.active === id ? null : s.active,
       finding: s.finding === id ? null : s.finding,

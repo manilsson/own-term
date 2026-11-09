@@ -1,4 +1,4 @@
-import { announce, getState, setActivity, setState, setStatus, subscribe, updateGroup, updateSession, type Toast } from './store'
+import { announce, getState, setActivity, setClaudeFolder, setState, setStatus, subscribe, updateGroup, updateSession, type Toast } from './store'
 import { refreshGit } from './git'
 import { focusSession, openPage, renamePane } from './workspace'
 import { claudeCheck } from './ask'
@@ -39,6 +39,8 @@ window.deck.onHook((id, e) => {
     saveLive()
     if (session.claudeSessionId !== e.claudeSessionId) updateSession(id, { claudeSessionId: e.claudeSessionId })
   }
+  // Claude switching into a worktree moves it without the shell; the session follows it.
+  if (e.cwd && e.event !== 'SessionEnd' && setClaudeFolder(id, e.cwd)) refreshGit(id)
   if (e.event === 'UserPromptSubmit' || e.event === 'Stop') interrupted.delete(id)
   // A new turn's reply is its own; one that ends without a Stop (an interrupt) has none.
   if (e.event === 'UserPromptSubmit') replies.delete(id)
@@ -111,6 +113,7 @@ window.deck.onHook((id, e) => {
     case 'SessionEnd':
       live.delete(id)
       saveLive()
+      if (setClaudeFolder(id, undefined)) refreshGit(id)
       updateSession(id, { claudeSessionId: undefined })
       setStatus(id, 'idle')
       break
@@ -135,6 +138,7 @@ onUserInput.add((id, data) => {
 onShellPrompt.add(id => {
   if (!live.delete(id)) return
   saveLive()
+  if (setClaudeFolder(id, undefined)) refreshGit(id)
   const status = getState().status[id]
   if (status === 'working' || status === 'input') setStatus(id, 'idle')
 })

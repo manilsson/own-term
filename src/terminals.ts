@@ -2,7 +2,7 @@ import { Terminal, type IDecoration } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon, type ISearchResultChangeEvent } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
-import { getState, setState, setStatus, updateSession, type Session, type SessionState } from './store'
+import { getState, setState, setStatus, updateSession, type Session, type SessionState, workFolder } from './store'
 import { refreshGit } from './git'
 import { addLinks } from './links'
 import { pinInput } from './pinned'
@@ -172,7 +172,11 @@ function create(session: Session): Entry {
     sendInput(id, data)
   })
   const cwd = () => getState().sessions.find(s => s.id === id)?.cwd ?? window.deck.homeDir
-  addLinks(term, cwd)
+  // Paths Claude prints are relative to where it works, which may be a worktree the shell isn't in.
+  addLinks(term, () => {
+    const session = getState().sessions.find(s => s.id === id)
+    return session ? workFolder(getState(), session) : window.deck.homeDir
+  })
   term.parser.registerOscHandler(7, data => {
     try {
       const folder = decodeURIComponent(new URL(data).pathname)

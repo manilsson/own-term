@@ -5,7 +5,7 @@ import {
 import { AlarmClock, Check, ChevronRight, CircleX, Columns2, Ellipsis, GitBranch, Globe, Plus, Sparkle, SquareTerminal } from 'lucide-react'
 import {
   addGroup, getState, groupAccent, groupColor, orderedSessions, paneGroup, paneMonitor, setState, undoLast, updateSession, useStore, viewIds,
-  type SessionState,
+  type SessionState, workFolder,
 } from './store'
 import { nextNeedsYou, openToast } from './claude'
 import './menubar'
@@ -311,7 +311,10 @@ function Footer() {
   const panes = useStore(s => viewIds(s, s.view).join(' '))
   const monitors = panes.split(' ').filter(id => paneMonitor(id)).length
   const count = panes ? panes.split(' ').length - monitors : 0
-  const cwd = useStore(s => s.sessions.find(x => x.id === s.active)?.cwd)
+  const cwd = useStore(s => {
+    const session = s.sessions.find(x => x.id === s.active)
+    return session && workFolder(s, session)
+  })
   const notice = useStore(s => s.notice)
   // A notice under the pointer stays, so its Undo can't go away just as you reach for it.
   const [hovered, setHovered] = useState(false)
@@ -673,7 +676,7 @@ export function App() {
         <div className="info-slot" ref={infoSlot} style={{ width: infoShown ? info.width + 12 : 0 }} inert={!infoShown}>
           <div className="sidebar-resizer" onPointerDown={startInfoResize} />
           {single && (
-            <InfoPanel session={single} width={info.width} active={infoShown} onNewSession={options => setCreating(options)} />
+            <InfoPanel session={single} width={info.width} active={infoShown} />
           )}
         </div>
       </div>

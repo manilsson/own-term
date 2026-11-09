@@ -556,8 +556,9 @@ function PeekItems({ groupId }: { groupId: string }) {
   )
 }
 
-function GitSummary({ id, cwd }: { id: string; cwd: string }) {
+function GitSummary({ id, cwd: shellFolder }: { id: string; cwd: string }) {
   const git = useStore(s => s.git[id])
+  const cwd = useStore(s => s.claudeFolders[id]) ?? shellFolder
   const folder = cwd.split('/').filter(Boolean).pop() ?? '~'
   if (!git) return <span>{folder}</span>
   const tree = git.worktree

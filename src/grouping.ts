@@ -1,10 +1,10 @@
-import { addGroup, announce, getState, moveSession, removeGroup, updateGroup, updateSession, viewIds, type Session } from './store'
+import { addGroup, announce, getState, moveSession, removeGroup, updateGroup, updateSession, viewIds, workFolder, type Session } from './store'
 import { groupRemoved, refreshGroupView } from './workspace'
 import { currentProjects } from './projects'
 
 const where = (s: Session) => {
   const branch = getState().git[s.id]?.branch
-  return `${s.cwd.replace(window.deck.homeDir, '~')}${branch ? `, ${branch}` : ''}`
+  return `${workFolder(getState(), s).replace(window.deck.homeDir, '~')}${branch ? `, ${branch}` : ''}`
 }
 
 function describe(session: Session, prompt: string) {

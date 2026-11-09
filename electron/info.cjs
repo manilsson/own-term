@@ -31,13 +31,12 @@ module.exports = function registerInfo({ ipcMain, run, gitStatus, ptys }) {
     const top = await gitStatus(cwd, 'rev-parse', '--show-toplevel').catch(() => null)
     if (!top) return null
     const branch = await gitStatus(cwd, 'symbolic-ref', '--short', '-q', 'HEAD').catch(() => null)
-    const [status, numstat, upstream, log, stashes, worktrees] = await Promise.all([
+    const [status, numstat, upstream, log, stashes] = await Promise.all([
       gitRaw(cwd, 'status', '--porcelain=v1', '-z', '--no-renames', '--untracked-files=all').catch(() => ''),
       gitRaw(cwd, 'diff', 'HEAD', '--numstat', '-z', '--no-renames').catch(() => ''),
       gitStatus(cwd, 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}').catch(() => null),
       gitStatus(cwd, 'log', '-n', '6', '--format=%h%x1f%s%x1f%an%x1f%ct').catch(() => ''),
       gitStatus(cwd, 'stash', 'list').catch(() => ''),
-      gitStatus(cwd, 'worktree', 'list', '--porcelain').catch(() => ''),
     ])
     const [ahead, behind] = upstream
       ? (await gitStatus(cwd, 'rev-list', '--left-right', '--count', 'HEAD...@{u}').catch(() => '0\t0')).split(/\s+/).map(Number)
@@ -76,11 +75,6 @@ module.exports = function registerInfo({ ipcMain, run, gitStatus, ptys }) {
         return { hash, subject, author, time: Number(time) * 1000, pushed: i >= unpushed }
       }),
       stashes: stashes ? stashes.split('\n').length : 0,
-      worktrees: worktrees.split('\n\n').filter(Boolean).map(block => {
-        const field = name => block.split('\n').find(l => l.startsWith(`${name} `))?.slice(name.length + 1)
-        const dir = field('worktree')
-        return { path: dir, branch: field('branch')?.replace(/^refs\/heads\//, '') ?? null, current: dir === top }
-      }),
     }
   })
 

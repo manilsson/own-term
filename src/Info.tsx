@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react'
 import {
-  Archive, ArrowDown, ArrowUp, Check, ChevronDown, Clock3, SquareTerminal, FileDiff, Folder, FolderOpen, FolderTree, GitBranch, GitPullRequest, KeyRound, NotebookPen, Sparkle, Sparkles, X,
+  Archive, ArrowDown, ArrowUp, Check, ChevronDown, Clock3, SquareTerminal, FileDiff, Folder, FolderGit2, FolderOpen, GitBranch, GitPullRequest, KeyRound, NotebookPen, Sparkle, Sparkles, X,
 } from 'lucide-react'
-import { groupColor, useStore, type Session } from './store'
-import { openSession } from './workspace'
+import { groupColor, useStore, workFolder, type Session } from './store'
 import { StatusIcon } from './StatusIcon'
 import { STATUS_LABEL } from './Sidebar'
 import { ContextChart, TurnsChart, duration, tokens } from './Charts'
@@ -103,20 +102,20 @@ const KIND = {
 const REVIEW = { APPROVED: 'Approved', CHANGES_REQUESTED: 'Changes requested', REVIEW_REQUIRED: 'Review required' }
 const REVIEW_TONE = { APPROVED: 'green', CHANGES_REQUESTED: 'red', REVIEW_REQUIRED: 'neutral' }
 
-export function InfoPanel({ session, width, active, onNewSession }: {
+export function InfoPanel({ session, width, active }: {
   session: Session
   width: number
   active: boolean
-  onNewSession: (options: { groupId: string | null; cwd: string }) => void
 }) {
   const demo = useMemo(() => (session.demo ? demoInfo(session.demo) : null), [session.demo])
   const live = active && !session.demo
-  const polledGit = usePoll(live ? () => window.deck.gitDetails(session.cwd) : null, `git:${session.id}:${session.cwd}`, 4000)
+  const folder = useStore(s => workFolder(s, session))
+  const polledGit = usePoll(live ? () => window.deck.gitDetails(folder) : null, `git:${session.id}:${folder}`, 4000)
   const claudeId = session.claudeSessionId
   const polledClaude = usePoll(live && claudeId ? () => window.deck.claudeInfo(claudeId) : null, `claude:${claudeId ?? ''}`, 3000)
   const polledPorts = usePoll(live ? () => window.deck.ports(session.id) : null, `ports:${session.id}`, 5000)
   // gh asks GitHub, so it's polled slowly, and again whenever the branch changes.
-  const polledPr = usePoll(live && polledGit ? () => window.deck.pullRequest(session.cwd) : null, `pr:${session.cwd}:${polledGit?.branch}`, 60000)
+  const polledPr = usePoll(live && polledGit ? () => window.deck.pullRequest(folder) : null, `pr:${folder}:${polledGit?.branch}`, 60000)
   const ranCommands = useCommands(session.id)
   const git = demo ? demo.git : polledGit
   const claude = demo ? demo.claude : polledClaude
@@ -151,9 +150,8 @@ export function InfoPanel({ session, width, active, onNewSession }: {
                   {!session.demo && <TokensSection id={session.id} />}
                   {git === null && <p className="info-empty">Not a git repository.</p>}
                   {git && <ChangesSection git={git} lines={lines} edited={claude?.edited ?? []} />}
-                  {git && <BranchSection git={git} pr={pr?.available ? pr.pr : null} />}
+                  {git && <BranchSection id={session.id} git={git} pr={pr?.available ? pr.pr : null} />}
                   {claude?.scratchpad && claude.scratchpad.files.length > 0 && <ScratchpadSection scratchpad={claude.scratchpad} />}
-                  {git && git.worktrees.length > 1 && <WorktreeSection git={git} session={session} onNewSession={onNewSession} />}
                 </>
               )}
             </div>
@@ -183,6 +181,7 @@ function Placeholder() {
 }
 
 function Header({ session }: { session: Session }) {
+  const folder = useStore(s => workFolder(s, session))
   const status = useStore(s => s.status[session.id] ?? 'idle')
   const group = useStore(s => s.groups.find(g => g.id === session.groupId))
   const act = useAct()
@@ -201,7 +200,7 @@ function Header({ session }: { session: Session }) {
         )}
         {STATUS_LABEL[status] && <span className={`state ${status}`}>{STATUS_LABEL[status]}</span>}
       </div>
-      <button className="info-path" title="Show in Finder" onClick={act(() => window.deck.revealFile(session.cwd))}>{home(session.cwd)}</button>
+      <button className="info-path" title="Show in Finder" onClick={act(() => window.deck.revealFile(folder))}>{home(folder)}</button>
     </div>
   )
 }
@@ -252,9 +251,9 @@ const FOLDED_KEY = 'deckterm.infoFolded'
 let folded: ReadonlySet<string> = (() => {
   try {
     const saved = localStorage.getItem(FOLDED_KEY)
-    return new Set<string>(saved ? JSON.parse(saved) : ['worktrees'])
+    return new Set<string>(saved ? JSON.parse(saved) : [])
   } catch {
-    return new Set(['worktrees'])
+    return new Set()
   }
 })()
 const foldListeners = new Set<() => void>()
@@ -465,8 +464,10 @@ function ChangesSection({ git, lines: { added, removed }, edited }: { git: GitDe
 }
 
 /** The branch, where it stands against its upstream, its pull request and its latest commits. */
-function BranchSection({ git, pr }: { git: GitDetails; pr: PullRequestInfo['pr'] | null }) {
+function BranchSection({ id, git, pr }: { id: string; git: GitDetails; pr: PullRequestInfo['pr'] | null }) {
   const act = useAct()
+  // Only a linked worktree is worth a line; the main checkout is where a session is by default.
+  const tree = useStore(s => s.git[id]?.worktree)
   const [commits, more] = useShowMore(git.commits, 3, n => `${n} earlier commits`)
   const prState = pr && pr.state[0] + pr.state.slice(1).toLowerCase()
   const prTone = pr && { OPEN: 'green', DRAFT: 'neutral', MERGED: 'accent', CLOSED: 'red' }[pr.state]
@@ -498,6 +499,12 @@ function BranchSection({ git, pr }: { git: GitDetails; pr: PullRequestInfo['pr']
           : <span className="info-chip">Not pushed yet</span>}
         {git.stashes > 0 && <span className="info-chip" title="Stashes"><Archive size={11} strokeWidth={2.2} />{git.stashes}</span>}
       </div>
+      {tree && (
+        <div className="info-row info-worktree" title={home(tree.path)}>
+          <FolderGit2 size={12} strokeWidth={2.2} className="info-worktree-icon" />
+          <span className="info-file">{tree.name}<span className="info-folder"> worktree of {tree.repo}</span></span>
+        </div>
+      )}
       {pr && (
         <>
           <button className="info-row info-pr" title={pr.url || undefined} onClick={act(() => window.open(pr.url))}>
@@ -614,37 +621,3 @@ function ScratchpadSection({ scratchpad: { dir, files, more: unlisted } }: { scr
   )
 }
 
-function WorktreeSection({ git, session, onNewSession }: {
-  git: GitDetails
-  session: Session
-  onNewSession: (options: { groupId: string | null; cwd: string }) => void
-}) {
-  const sessions = useStore(s => s.sessions)
-  // Linked worktrees usually sit inside the main checkout's folder, so a folder belongs to the
-  // deepest worktree that contains it.
-  const owner = (cwd: string) => git.worktrees
-    .filter(t => cwd === t.path || cwd.startsWith(`${t.path}/`))
-    .sort((a, b) => b.path.length - a.path.length)[0]
-  return (
-    <Section id="worktrees" title="Worktrees" icon={<FolderTree size={12} strokeWidth={2.2} />} tone="neutral" detail={`${git.worktrees.length}`}>
-      {git.worktrees.map(tree => {
-        const there = sessions.find(s => s.id !== session.id && owner(s.cwd)?.path === tree.path)
-        return (
-          <button
-            key={tree.path}
-            className={`info-row ${tree.current ? 'current' : ''}`}
-            disabled={tree.current}
-            title={tree.current ? 'This session’s worktree' : there ? `Show “${there.name}”` : 'New session in this worktree'}
-            onClick={() => (there ? openSession(there.id) : onNewSession({ groupId: session.groupId, cwd: tree.path }))}
-          >
-            <span className="info-file">
-              {base(tree.path)}
-              {tree.branch && <span className="info-folder"> {tree.branch}</span>}
-            </span>
-            <span className="info-lines">{tree.current ? 'This one' : there ? there.name : 'New Session…'}</span>
-          </button>
-        )
-      })}
-    </Section>
-  )
-}

@@ -51,7 +51,6 @@ interface GitDetails {
   moreFiles: number
   commits: { hash: string; subject: string; author: string; time: number; pushed: boolean }[]
   stashes: number
-  worktrees: { path: string; branch: string | null; current: boolean }[]
 }
 
 /** The branch's pull request; `available` is false without gh or a GitHub remote. */
@@ -115,6 +114,8 @@ interface HookEvent {
   /** SessionStart's reason: startup, resume, clear or compact. */
   source?: string
   fromSubagent: boolean
+  /** The folder Claude is in, left out for a subagent's event (electron/hook-cwd.cjs). */
+  cwd?: string
   prompt?: string
   notificationType?: string
   toolName?: string

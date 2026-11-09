@@ -61,7 +61,7 @@ through `window.deck`, which `electron/preload.cjs` exposes and `src/global.d.ts
 | `src/App.tsx` | The window: toolbar, sidebar slot, panes, footer, palette, every command |
 | `src/Sidebar.tsx` | Groups (with a rail in the group's color) and sessions (a worktree mark, ✕ to end on hover), search, Needs You, drag to regroup sessions and reorder groups |
 | `src/commands.ts`, `CommandViewer.tsx` | The shell commands Claude runs in each session, from its hooks (see "Commands"), and a command's output over the window, a background one's followed live |
-| `src/Info.tsx` | The info panel (⌃⌘I) beside a single session, its cards: Claude, what's running (Claude's commands, with the ports each started, and servers the shell started), changes, the branch with its pull request, Claude's scratchpad, worktrees. A card's title folds it to a one-line summary, the same in every session (`localStorage['deckterm.infoFolded']`, Worktrees folded at first), and long lists show their first few. Each poll's last answer is kept, so a session you come back to shows at once |
+| `src/Info.tsx` | The info panel (⌃⌘I) beside a single session, its cards: Claude, what's running (Claude's commands, with the ports each started, and servers the shell started), changes, the branch with its pull request, Claude's scratchpad. The branch card names the session's worktree when it's a linked one. A card's title folds it to a one-line summary, the same in every session (`localStorage['deckterm.infoFolded']`), and long lists show their first few. Each poll's last answer is kept, so a session you come back to shows at once |
 | `src/FileViewer.tsx` | A file's changes since the last commit, or its text, over the window; opened from the info panel |
 | `src/Charts.tsx` | The info panel's two charts: context per request and time per turn |
 | `src/Palette.tsx`, `FindBar.tsx`, `NewSessionSheet.tsx`, `Toasts.tsx` | ⌘P, ⌘F, ⌘T and the notification banners |
@@ -226,7 +226,12 @@ server main runs on `127.0.0.1` (random port, checked token, both passed to the 
 `DECKTERM_PORT` is unset and the hook does nothing.
 
 Main reduces each event to `{ event, claudeSessionId, source, fromSubagent, prompt, notificationType,
-toolName, summary, activity, agents, reply, command }`. `claudeSessionId` is dropped unless it looks like an id, because it ends up in a
+toolName, summary, activity, agents, reply, command, cwd }`. `cwd` is the folder Claude is in
+(`hook-cwd.cjs`), left out for a subagent's event, which may run in a worktree of its own. Claude
+switching itself into a worktree moves it without the shell, so `claude.ts` keeps it in
+`claudeFolders` while it differs from the shell's folder, until Claude ends. `workFolder` in
+`store.ts` is the folder for what a session works on: git, the info panel, paths Claude prints,
+Reveal and Copy Path, and the tools' `folder`; shells still start in the shell's own `cwd`. `claudeSessionId` is dropped unless it looks like an id, because it ends up in a
 `claude --resume` shell command. `summary` is the question or permission text, or the start of
 Claude's last message read from the transcript. `activity` is a starting tool in a few words
 ("Editing store.ts", a command's description), kept per session in `activity` for the menu bar.
