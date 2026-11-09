@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.70
+
+2026-11-09
+
+- Show a session's tokens in its info panel, and give one before Claude asks
+
 ## 0.1.69
 
 2026-11-09
