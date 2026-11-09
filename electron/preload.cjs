@@ -120,6 +120,8 @@ contextBridge.exposeInMainWorld('deck', {
     rename: (from, to) => ipcRenderer.invoke('secrets:rename', from, to),
     remove: name => ipcRenderer.invoke('secrets:remove', name),
     revoke: (sessionId, name) => ipcRenderer.invoke('secrets:revoke', sessionId, name),
+    grant: (sessionId, name) => ipcRenderer.invoke('secrets:grant', sessionId, name),
+    onChange: callback => on('secrets', callback),
   },
   onData: callback => on('pty:data', callback),
   onExit: callback => on('pty:exit', callback),

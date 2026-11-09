@@ -118,8 +118,18 @@ writeMcpConfig(MCP_CONFIG)
 const secrets = createSecrets({
   dir: app.getPath('userData'),
   seal: { available: () => safeStorage.isEncryptionAvailable(), encrypt: s => safeStorage.encryptString(s), decrypt: b => safeStorage.decryptString(b) },
+  onChange: () => send('secrets'),
 })
 ipcMain.handle('secrets:list', () => secrets.list())
+// Give Token… in the window: the user hands a running session a token before Claude asks.
+ipcMain.handle('secrets:grant', (_e, sessionId, name) => {
+  if (!ptys.has(sessionId)) return { error: 'That session’s shell isn’t running.' }
+  try {
+    return { path: secrets.grant(sessionId, name) }
+  } catch (error) {
+    return { error: error.message }
+  }
+})
 for (const action of ['add', 'replace', 'rename', 'remove', 'revoke']) {
   ipcMain.handle(`secrets:${action}`, (_e, ...args) => {
     try {

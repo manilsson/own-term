@@ -5,6 +5,7 @@ import {
 import { kill } from './terminals'
 import { editorState } from './editor'
 import { applyReminder, formatDue, reminderItems } from './reminders'
+import { applyTokenChoice, tokenMenuItems } from './secrets'
 import { closePane, groupRemoved, isOpen, openSession, refreshGroupView, sessionEnded, showBeside, showGroup } from './workspace'
 
 const swatches = new Map<string, string>()
@@ -108,6 +109,7 @@ export async function sessionMenu(session: Session, inPane = false) {
       label: session.remind ? `Remind Me (${formatDue(session.remind.at)})` : 'Remind Me',
       submenu: reminderItems(session),
     },
+    { label: 'Give Token', submenu: tokenMenuItems(session.id) },
     { type: 'separator' },
     { id: 'rename', label: 'Rename' },
     ...(session.icon ? [{ id: 'remove-icon', label: 'Remove Icon' }] : []),
@@ -129,6 +131,7 @@ export async function sessionMenu(session: Session, inPane = false) {
   if (choice === 'copy-path') navigator.clipboard.writeText(session.cwd)
   if (choice === 'end') endSession(session)
   applyReminder(session, choice)
+  applyTokenChoice(session.id, choice)
   if (choice?.startsWith('move:')) {
     const target = choice.slice(5)
     moveSession(session.id, target === 'new' ? addGroup() : target || null)

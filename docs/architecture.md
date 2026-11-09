@@ -472,6 +472,11 @@ open is refused.
   Without the keychain it refuses to save.
 - **Grants** last the session: deleted when it ends (`pty:kill`), revoked or deleted in Settings,
   rewritten when the token is replaced, and all wiped at launch and quit.
+- **Who holds what**: the store reports every change, main sends the window `secrets`, and
+  `src/secrets.ts` keeps the list live. The info panel's Tokens section shows a session's tokens
+  with when each was given and Revoke. Give Token (the session's menu, or Give Another Token… there)
+  grants one before Claude asks, through `secrets:grant`, and types where it is into the session,
+  unsent: a sentence for Claude, or `$(cat '<path>')` in a plain shell.
 - **The limit**: a command that prints a granted token puts it in Claude's transcript. Hooks can't
   change Bash output, so the tool's description tells Claude never to print it.
 - Tests: `node --test electron/*.test.cjs`.

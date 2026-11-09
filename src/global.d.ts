@@ -149,6 +149,8 @@ interface SecretEntry {
   updatedAt: number
   /** Sessions holding a grant of it. */
   holders: string[]
+  /** When each of those sessions was given it, in ms. */
+  granted: Record<string, number>
 }
 
 /** What a tool call answers. `transcript` asks main to add that Claude conversation's latest prompts. */
@@ -653,6 +655,8 @@ interface Window {
       rename(from: string, to: string): Promise<{ error?: string }>
       remove(name: string): Promise<{ error?: string }>
       revoke(sessionId: string, name: string): Promise<{ error?: string }>
+      grant(sessionId: string, name: string): Promise<{ path?: string; error?: string }>
+      onChange(callback: () => void): Unsubscribe
     }
     onData(callback: (id: string, data: string) => void): Unsubscribe
     onExit(callback: (id: string, code: number) => void): Unsubscribe

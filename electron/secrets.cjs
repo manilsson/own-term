@@ -6,8 +6,11 @@ const path = require('node:path')
 const NAME = /^[A-Za-z0-9_-]{1,64}$/
 const SESSION = /^[\w-]{1,64}$/
 
-/** `seal` is Electron's safeStorage, passed in so the store runs under node:test too. */
-function createSecrets({ dir, seal }) {
+/**
+ * `seal` is Electron's safeStorage, passed in so the store runs under node:test too. `onChange` is
+ * called after every change, so the window can show who holds what.
+ */
+function createSecrets({ dir, seal, onChange = () => {} }) {
   const storeFile = path.join(dir, 'secrets.json')
   const grantsDir = path.join(dir, 'session-secrets')
 
@@ -34,6 +37,7 @@ function createSecrets({ dir, seal }) {
   }
   const grantFile = (sessionId, name) => path.join(grantsDir, sessionId, name)
   const holders = name => sessions().filter(id => fs.existsSync(grantFile(id, name)))
+  const grantedAt = name => Object.fromEntries(holders(name).map(id => [id, fs.statSync(grantFile(id, name)).mtimeMs]))
   const find = (store, name) => Object.keys(store).find(n => n.toLowerCase() === String(name).toLowerCase())
   const existing = (store, name) => {
     const found = find(store, name)
@@ -65,10 +69,10 @@ function createSecrets({ dir, seal }) {
     }
   }
 
-  return {
+  const store = {
     list() {
       return Object.entries(read()).map(([name, entry]) => ({
-        name, createdAt: entry?.createdAt ?? 0, updatedAt: entry?.updatedAt ?? 0, holders: holders(name),
+        name, createdAt: entry?.createdAt ?? 0, updatedAt: entry?.updatedAt ?? 0, holders: holders(name), granted: grantedAt(name),
       }))
     },
     add(name, value) {
@@ -85,7 +89,13 @@ function createSecrets({ dir, seal }) {
       const found = existing(store, name)
       store[found] = { ...store[found], sealed: seals(value), updatedAt: Date.now() }
       write(store)
-      for (const id of holders(found)) writeGrant(grantFile(id, found), value)
+      for (const id of holders(found)) {
+        const file = grantFile(id, found)
+        const { atime, mtime } = fs.statSync(file)
+        writeGrant(file, value)
+        // When it was given stays when it was given.
+        fs.utimesSync(file, atime, mtime)
+      }
     },
     rename(from, to) {
       checkName(to)
@@ -125,6 +135,16 @@ function createSecrets({ dir, seal }) {
       fs.rmSync(grantsDir, { recursive: true, force: true })
     },
   }
+  // A change that throws changed nothing, so only one that went through is reported.
+  for (const name of ['add', 'replace', 'rename', 'remove', 'grant', 'revoke', 'endSession', 'clearGrants']) {
+    const change = store[name]
+    store[name] = (...args) => {
+      const result = change(...args)
+      onChange()
+      return result
+    }
+  }
+  return store
 }
 
 module.exports = { createSecrets }

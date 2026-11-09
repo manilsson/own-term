@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { KeyRound } from 'lucide-react'
 import { Editable } from './Editable'
 import { useStore } from './store'
+import { useTokens } from './secrets'
 
 // The tokens Claude can ask for (request_secret). Values go to main and never come back to the window.
 
 export function SecretsSettings() {
-  const [tokens, setTokens] = useState<SecretEntry[]>([])
+  const tokens = useTokens()
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
-  const refresh = () => window.deck.secrets.list().then(list => setTokens([...list].sort((a, b) => a.name.localeCompare(b.name))))
-  useEffect(() => void refresh(), [])
   const act = async (result: Promise<{ error?: string }>) => {
     const { error } = await result
     setError(error ?? '')
-    await refresh()
     return error === undefined
   }
 

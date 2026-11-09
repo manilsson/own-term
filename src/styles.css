@@ -1712,6 +1712,11 @@ body.resizing .info-slot,
   width: auto;
 }
 
+.token-key {
+  flex-shrink: 0;
+  color: var(--green);
+}
+
 .port-chip {
   flex-shrink: 0;
   border: none;

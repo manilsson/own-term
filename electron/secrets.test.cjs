@@ -127,3 +127,47 @@ test('a corrupt store lists nothing and an unreadable token cannot be granted', 
   broken.secrets.add('demo-key', VALUE)
   assert.throws(() => broken.secrets.grant('s1', 'demo-key'), /That token can't be read; replace it in Settings\./)
 })
+
+test('list says when each session was given a token', () => {
+  const { secrets } = setup()
+  secrets.add('demo-api-key', VALUE)
+  const before = Date.now()
+  secrets.grant('s1', 'demo-api-key')
+  const [entry] = secrets.list()
+  assert.deepEqual(Object.keys(entry.granted), ['s1'])
+  assert.ok(entry.granted.s1 >= before - 1000 && entry.granted.s1 <= Date.now() + 1000)
+})
+
+test('every change is reported', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'secrets-test-'))
+  let changes = 0
+  const secrets = createSecrets({ dir, seal: fakeSeal(), onChange: () => changes++ })
+  const steps = [
+    () => secrets.add('demo-key', VALUE),
+    () => secrets.grant('s1', 'demo-key'),
+    () => secrets.replace('demo-key', 'other'),
+    () => secrets.rename('demo-key', 'demo-renamed'),
+    () => secrets.revoke('s1', 'demo-renamed'),
+    () => secrets.grant('s1', 'demo-renamed'),
+    () => secrets.endSession('s1'),
+    () => secrets.remove('demo-renamed'),
+    () => secrets.clearGrants(),
+  ]
+  steps.forEach((step, i) => {
+    step()
+    assert.equal(changes, i + 1, `step ${i + 1}`)
+  })
+  // A failed change changes nothing, so it isn't reported.
+  assert.throws(() => secrets.add('a b', VALUE))
+  assert.equal(changes, steps.length)
+})
+
+test('replacing a token keeps when it was given', () => {
+  const { secrets } = setup()
+  secrets.add('demo-api-key', VALUE)
+  const file = secrets.grant('s1', 'demo-api-key')
+  const past = new Date(Date.now() - 3_600_000)
+  fs.utimesSync(file, past, past)
+  secrets.replace('demo-api-key', 'sk_test_1111')
+  assert.equal(Math.round(secrets.list()[0].granted.s1 / 1000), Math.round(past.getTime() / 1000))
+})

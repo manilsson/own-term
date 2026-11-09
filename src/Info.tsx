@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react'
 import {
-  Archive, ArrowDown, ArrowUp, Check, ChevronDown, Clock3, SquareTerminal, FileDiff, Folder, FolderOpen, FolderTree, GitBranch, GitPullRequest, NotebookPen, Sparkle, Sparkles, X,
+  Archive, ArrowDown, ArrowUp, Check, ChevronDown, Clock3, SquareTerminal, FileDiff, Folder, FolderOpen, FolderTree, GitBranch, GitPullRequest, KeyRound, NotebookPen, Sparkle, Sparkles, X,
 } from 'lucide-react'
 import { groupColor, useStore, type Session } from './store'
 import { openSession } from './workspace'
@@ -12,6 +12,7 @@ import { FileViewer } from './FileViewer'
 import { useEditor } from './editor'
 import { commandState, useCommands, type Command } from './commands'
 import { CommandViewer } from './CommandViewer'
+import { applyTokenChoice, revokeToken, tokenMenuItems, useTokens } from './secrets'
 
 // Every poll's last answer by key, so a session you come back to shows at once and refreshes behind.
 const lastAnswers = new Map<string, unknown>()
@@ -147,6 +148,7 @@ export function InfoPanel({ session, width, active, onNewSession }: {
                   <Stats git={git} claude={claude} lines={lines} />
                   {claude && <ClaudeSection claude={claude} root={git?.root} showEdited={!git} />}
                   {(commands.length > 0 || (ports && ports.length > 0)) && <RunningSection commands={commands} ports={ports ?? []} />}
+                  {!session.demo && <TokensSection id={session.id} />}
                   {git === null && <p className="info-empty">Not a git repository.</p>}
                   {git && <ChangesSection git={git} lines={lines} edited={claude?.edited ?? []} />}
                   {git && <BranchSection git={git} pr={pr?.available ? pr.pr : null} />}
@@ -391,6 +393,35 @@ function RunningSection({ commands, ports }: { commands: Command[]; ports: Port[
       {finishedShown.map(row)}
       {more}
       {shown && <CommandViewer command={shown} onClose={() => setViewing(null)} />}
+    </Section>
+  )
+}
+
+/** The tokens the session was given (request_secret or Give Token…), each until revoked or the session ends. */
+function TokensSection({ id }: { id: string }) {
+  const held = useTokens().filter(t => t.holders.includes(id))
+  if (!held.length) return null
+  const more = async () => applyTokenChoice(id, await window.deck.popupMenu(tokenMenuItems(id)))
+  return (
+    <Section
+      id="tokens"
+      title="Tokens"
+      icon={<KeyRound size={12} strokeWidth={2.2} />}
+      tone="green"
+      detail={<span className="info-chip green">{held.length}</span>}
+      summary={held.map(t => t.name).join(', ')}
+    >
+      {held.map(t => (
+        <div key={t.name} className="command-row">
+          <div className="info-row" title="Claude reads it from a file only this session holds, until it's revoked or the session ends.">
+            <KeyRound size={11} strokeWidth={2.2} className="token-key" />
+            <span className="info-file">{t.name}</span>
+            <span className="info-lines">{ago(t.granted[id] ?? Date.now())}</span>
+          </div>
+          <button className="info-chip port-chip" title={`Delete this session's copy of ${t.name}`} onClick={() => revokeToken(id, t.name)}>Revoke</button>
+        </div>
+      ))}
+      <button className="info-show-more" onClick={more}>Give Another Token…</button>
     </Section>
   )
 }
